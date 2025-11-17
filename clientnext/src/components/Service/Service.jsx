@@ -34,9 +34,10 @@ const Service = () => {
       <section id="Servive" className="py-20 bg-white">
       <div className="mx-auto px-6 md:px-10 text-center">
         
-        <h1 className="text-4xl md:text-5xl font-bold text-[#282828] mb-6 leading-tight text-center mx-auto w-full flex justify-center">
-        خدماتنا في <span className="text-[#F9B236] mx-2">واحة المعرفة</span>
+<h1 className="text-4xl md:text-5xl font-bold text-[#282828] mb-6 leading-tight text-center mx-auto w-full flex justify-center">
+          خدمات <span className="text-[#F9B236] mx-2">واحة المعرفة</span>
         </h1>
+
 
 <div className="mt-10 flex flex-col lg:flex-row justify-center items-stretch gap-8">
 

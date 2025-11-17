@@ -6,7 +6,6 @@ import WhyUs from "@/components/WhyUs/WhyUs";
 import Event from "@/components/Events/Event";
 import Reviews from "@/components/Reviews/Reviews";
 
-import Image from "next/image";
 
 export default function Page() {
   return (

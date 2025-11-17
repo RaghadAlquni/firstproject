@@ -1,39 +1,40 @@
 const User = require("../../DB/models/userSchema");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-require('dotenv').config();
+require("dotenv").config();
 
-// Login for all Users
+// Login with Email + Password
 const loginUser = async (req, res) => {
   try {
-    const { idNumber, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!idNumber || !password) {
-      return res.status(400).json({ message: "Please provide idNumber and password" });
+    // تحقق من وجود البيانات
+    if (!email || !password) {
+      return res.status(400).json({ message: "Please provide email and password" });
     }
 
-    // البحث عن المستخدم حسب idNumber
-    const user = await User.findOne({ idNumber });
+    // البحث عن المستخدم حسب البريد الإلكتروني
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid idNumber or password" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // التحقق من كلمة المرور
+    // مقارنة كلمة المرور
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid idNumber or password" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // إنشاء JWT
+    // إنشاء التوكن
     const token = jwt.sign(
       {
         _id: user._id,
         fullName: user.fullName,
         role: user.role,
-        shift: user.shift
+        shift: user.shift,
       },
-      process.env.JWT_SECRET, // يجب أن تكون موجودة في .env
-      { expiresIn: "6h" } // مدة صلاحية التوكن
+      process.env.JWT_SECRET,
+      { expiresIn: "6h" }
     );
 
     res.status(200).json({ message: "Login successful", token });
@@ -42,7 +43,6 @@ const loginUser = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Error logging in", error: error.message });
   }
-}
+};
 
-
-module.exports = { loginUser }
+module.exports = { loginUser };

@@ -19,7 +19,7 @@ const Home = () => {
           <span className="text-[#f9b236] text-lg md:text-xl font-bold">
             مرحبًا بك في مركز واحة المعرفة
           </span>
-          <h1 className="text-[#282828] text-[32px] md:text-[48px] font-bold leading-snug md:leading-[58px]">
+          <h1 className="text-[#282828] text-[32px] md:text-[48px] font-bold leading-snug md:leading-[58px] ">
             ضيافة آمنة.. طفولة سعيدة
           </h1>
         </div>

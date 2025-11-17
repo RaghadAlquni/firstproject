@@ -36,15 +36,15 @@ const Navbar = () => {
         <Link href="/#Servive" className="text-[#292929] hover:text-[#F9B236] transition">
           الخدمات
         </Link>
-        <a href="/#Brnach" className="text-[#292929] hover:text-[#F9B236] transition">
+        <Link href="/#Brnach" className="text-[#292929] hover:text-[#F9B236] transition">
           الفروع
-        </a>
-        <a href="#" className="text-[#292929] hover:text-[#F9B236] transition">
+        </Link>
+        <Link href="/#Events" className="text-[#292929] hover:text-[#F9B236] transition">
           أخبارنا
-        </a>
-        <a href="#" className="text-[#292929] hover:text-[#F9B236] transition">
+        </Link>
+        <Link href="/career" className="text-[#292929] hover:text-[#F9B236] transition">
           التوظيف
-        </a>
+        </Link>
       </nav>
 
       {/* Buttons */}

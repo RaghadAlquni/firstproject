@@ -26,18 +26,19 @@ const events = [
 ];
 
 const Event = () => {
-return (
-    <div className="relative w-full py-16">
+  return (
+    <div id="Events" className="relative w-full py-20 overflow-x-hidden">
 
       {/* الخلفية */}
       <div className="absolute inset-0 bg-[url('https://codia-f2c.s3.us-west-1.amazonaws.com/image/2025-11-14/aw9gOVkv2u.png')] bg-cover bg-no-repeat"></div>
       
       {/* المحتوى */}
-      <div className="relative z-10 max-w-[1280px] mx-auto px-4 flex flex-col gap-10 md:pt-9">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-4 flex flex-col gap-10 lg:pt-12 md:pt-24">
 
-         {/* العنوان */}
-        <h1 className="text-4xl md:text-5xl font-bold text-[#282828] mb-6 leading-tight text-center mx-auto w-full flex justify-center">
-          فعاليات وأخبار <span className="text-[#F9B236] mx-2">واحة المعرفة</span>
+        {/* العنوان */}
+        <h1 className="text-4xl md:text-5xl font-bold text-[#282828] mb-6 leading-tight text-center mx-auto">
+          فعاليات وأخبار 
+          <span className="text-[#F9B236] mx-2">واحة المعرفة</span>
         </h1>
 
         {/* الكروت */}
@@ -48,20 +49,19 @@ return (
               key={i}
               className="
                 group 
-                w-[360px] md:w-[390px] 
+                w-full max-w-[360px] md:max-w-[390px]
                 rounded-tl-[70px] rounded-tr-[70px] rounded-br-[10px] rounded-bl-[10px]
                 border border-dashed 
                 p-1.5 flex flex-col 
                 transition-all duration-300 
                 hover:scale-[1.02]
               "
-              style={{ borderColor: event.color, minHeight: "390px" }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = event.color)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "transparent")
-              }
+              style={{
+                borderColor: event.color,
+                minHeight: "390px"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = event.color)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
 
               {/* الصورة */}
@@ -76,8 +76,7 @@ return (
                 <div
                   className="
                     absolute bottom-0 right-0 
-                    mb-0 mr-3 
-                    px-4 py-[2px] text-white text-[14px]
+                    mb-0 mr-3 px-4 py-[2px] text-white text-[14px]
                     rounded-tl-[12px] rounded-tr-[12px]
                   "
                   style={{ backgroundColor: event.color }}
@@ -108,41 +107,43 @@ return (
 
         </div>
 
-        {/* القسم السفلي */}
-        <div className="w-full flex flex-row justify-between mt-4">
+{/* القسم السفلي */}
+<div className="w-full grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center mt-4 gap-6">
 
-        {/* النصوص يسار */}
-          <div className="flex flex-col items-start text-left gap-1">
-          <div className="flex items-center gap-2">
-    <span className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: "#F9B236" }}></span>
-    <span className="text-[18px] font-semibold text-[#F9B236]">
-      اخبار واحة المعرفة
-    </span>
+  {/* النصوص — يمين */}
+  <div className="flex flex-col items-start text-right gap-1 w-full md:w-auto">
+
+    <div className="flex items-center gap-2">
+      <span className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: "#F9B236" }}></span>
+      <span className="text-[18px] font-semibold text-[#F9B236]">
+        اخبار واحة المعرفة
+      </span>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <span className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: "#17B3DC" }}></span>
+      <span className="text-[18px] font-semibold text-[#129CC1]">
+        فعاليات واحة المعرفة
+      </span>
+    </div>
+
   </div>
-            {/* فعاليات واحة المعرفة */}
-  <div className="flex items-center gap-2">
-    <span className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: "#17B3DC" }}></span>
-    <span className="text-[18px] font-semibold text-[#129CC1]">
-      فعاليات واحة المعرفة
-    </span>
+
+  {/* الزر — بالنص دائمًا */}
+  <div className="flex justify-center">
+    <button className="bg-[#F9B236] text-white font-medium text-[18px] px-10 py-3 rounded-full shadow-md whitespace-nowrap">
+      المزيد من الفعاليات والأخبار
+    </button>
   </div>
 
-          </div>
+  {/* عمود فارغ (يسار) — فقط للموازنة */}
+  <div className="hidden md:block"></div>
 
-          {/* الزر بالنص */}
-          <div className="flex flex-1 justify-center">
-            <button className="bg-[#F9B236] text-white font-medium text-[18px] px-10 py-3 rounded-full shadow-md">
-              المزيد من الفعاليات والأخبار
-            </button>
-          </div>
-
-          {/* مساحة وهمية لتحافظ على موازنة المحاذاة */}
-  <div className="w-[200px]"></div>
-
-        </div>
+</div>
 
       </div>
     </div>
   );
-}
+};
+
 export default Event;

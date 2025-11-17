@@ -1,6 +1,4 @@
 # Ignore the server folder completely (for now)
-/client
-/client-new
 /server
 
 # System files

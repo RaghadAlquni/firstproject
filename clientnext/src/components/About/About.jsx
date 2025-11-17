@@ -40,11 +40,24 @@ const About = () => {
 
       {/* 🩵 المحتوى */}
       <div className="relative mt-10 z-[10] w-full max-w-[1280px] mx-auto px-4 md:px-10 text-center">
-
-        {/* العنوان */}
-        <h1 className="text-4xl md:text-5xl font-bold text-[#282828] mb-6 leading-tight text-center mx-auto w-full flex justify-center">
-          مركز <span className="text-[#F9B236] mx-2">واحة المعرفة</span> لضيافة الأطفال
-        </h1>
+<div className="w-full flex justify-center">
+  <h1
+    className="
+      text-3xl md:text-5xl 
+      font-bold 
+      text-[#282828] 
+      mb-6 
+      leading-tight 
+      text-center
+      w-full
+      break-words
+      px-10
+      max-w-[800px]
+    "
+  >
+    مركز <span className="text-[#F9B236] mx-2">واحة المعرفة</span> لضيافة الأطفال
+  </h1>
+</div>
 
        <p className="text-base md:text-xl text-[#4d4c4c] leading-relaxed text-center mx-auto w-full flex justify-center">
           يقدم بيئة تعليمية وترفيهية آمنة وشاملة، نحتضن فيها الصغار لنمنحهم الرعاية والاهتمام،

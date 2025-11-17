@@ -25,7 +25,7 @@ const branchCards = [
 
 const Branch = () => {
   return (
-    <section id="Brnach" className="relative w-full py-16  overflow-hidden">
+    <section id="Brnach" className="relative w-full py-16 pt-20 overflow-hidden">
 
       {/* الخلفية */}
       <div className="absolute inset-0 bg-[url('https://codia-f2c.s3.us-west-1.amazonaws.com/image/2025-11-13/LUOrLgnyOU.png')] bg-cover bg-no-repeat opacity-100"></div>

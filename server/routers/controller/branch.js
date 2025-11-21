@@ -62,9 +62,9 @@ const getAllBranches = async (req, res) => {
         path: "directors.user",
         select: "fullName email shift role"
       })
-      .populate("assistantDirectors", "fullName email role shift")
-      .populate("teachers", "fullName email role shift")
-      .populate("assistantTeachers", "fullName email role shift")
+      .populate("assistant_directors", "fullName email role shift") // ✅ اسم مطابق للسكيما
+      .populate("teachers", "fullName email role shift")             // 👍 كان صحيح
+      .populate("assistant_teachers", "fullName email role shift")   // ✅ اسم مطابق للسكيما
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -80,6 +80,7 @@ const getAllBranches = async (req, res) => {
     });
   }
 };
+
 
 // 3️⃣ جلب فرع واحد فقط حسب الـid
 const getBranchById = async (req, res) => {

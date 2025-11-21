@@ -1,7 +1,7 @@
 const express = require("express")
 const userRouter = express.Router()
 
-const { addUser,
+const { addUser, getUser,
   getTeachers,
   getTeacher,
   getAssistantTeachers,
@@ -11,6 +11,9 @@ const { addUser,
   getAllAssistantDirectors,
   getAssistantDirector,
   getDirectorDetails} = require("../controller/user")
+  const { getDashboard } = require("../controller/dashboardState.js");
+  
+
 const authenticate = require("../middleware/authentication.js");
 const authorize = require("../middleware/authorization.js");
 
@@ -26,6 +29,7 @@ const validateInput = (req, res, next) => {
 userRouter.post("/addUser", authenticate, authorize(["admin", "director", "assistant_director"]), validateInput, addUser) // إضافة Admin أو Director (Admin فقط)
 
 // get
+userRouter.get("/User", authenticate, getUser)
 userRouter.get("/directors", authenticate, authorize(["admin"]), getAllDirectors)
 userRouter.get("/director/:id", authenticate, authorize(["admin"]), getDirector);
 userRouter.get("/assistantDirectors", authenticate, authorize(["admin", "director"]), getAllAssistantDirectors);
@@ -35,5 +39,6 @@ userRouter.get("/assistantTeachers", authenticate, authorize(["admin", "director
 userRouter.get("/teacher/:id", authenticate, authorize(["admin", "director", "assistant_director"]), getTeacher);
 userRouter.get("/assistantTeacher/:id", authenticate, authorize(["admin", "director", "assistant_director"]), getAssistantTeacher);
 userRouter.get("/directorDetails/:id", authenticate, authorize(["admin", "director"]), getDirectorDetails);
+
 
 module.exports = userRouter;

@@ -44,11 +44,11 @@ const sendUserEmail = async (email, tempPassword, fullName) => {
 // ➕ إضافة مستخدم جديد (Admin / Director / Assistant Director / Teacher / Assistant Teacher / Parent)
 const addUser = async (req, res) => {
   try {
-    const { fullName, email, idNumber, role, branch, shift } = req.body;
+    const { fullName, email, idNumber, phone, role, branch, shift } = req.body;
     const requestingUser = req.user;
 
     // ✅ تحقق من الحقول الأساسية
-    if (!fullName || !email || !idNumber || !role) {
+    if (!fullName || !email || !idNumber || !phone || !role) {
       return res.status(400).json({ message: "❌ الحقول الأساسية مطلوبة" });
     }
 
@@ -59,7 +59,7 @@ const addUser = async (req, res) => {
       "assistant_director",
       "teacher",
       "assistant_teacher",
-      "parent",
+    
     ];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ message: "❌ دور المستخدم غير صالح" });
@@ -81,7 +81,7 @@ const addUser = async (req, res) => {
 
     // 🔹 الأدمن يحددها يدويًا
     if (requestingUser.role === "admin") {
-      if (role !== "admin" && role !== "parent") {
+      if (role !== "admin") {
         if (!branch || !shift) {
           return res.status(400).json({ message: "❌ يجب تحديد الفرع والشفت" });
         }
@@ -105,6 +105,7 @@ const addUser = async (req, res) => {
       fullName,
       email,
       idNumber,
+      phone,
       password: hashedPassword,
       role,
       branch: assignedBranch,
@@ -212,6 +213,28 @@ const addUser = async (req, res) => {
   }
 };
 
+
+const getUser = async (req, res) => {
+  try {
+    const userId = req.user._id; // جاي من الميدل وير حق التوكن
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "⚠️ المستخدم غير موجود" });
+    }
+
+    res.status(200).json(user);
+
+  } catch (error) {
+    console.error("❌ خطأ في جلب بيانات المستخدم:", error);
+    res.status(500).json({
+      message: "❌ حدث خطأ أثناء جلب بيانات المستخدم",
+      error: error.message
+    });
+  }
+};
+
 //  جلب جميع المعلمين الرئيسيين
 const getTeachers = async (req, res) => {
   try {
@@ -228,6 +251,7 @@ const getTeachers = async (req, res) => {
     res.status(500).json({ message: "❌ خطأ في جلب المعلمين", error: error.message });
   }
 };
+
 
 
 // جلب معلم رئيسي واحد
@@ -413,6 +437,7 @@ const getDirectorDetails = async (req, res) => {
 
 module.exports = {
   addUser,
+  getUser,
   getTeachers,
   getTeacher,
   getAssistantTeachers,

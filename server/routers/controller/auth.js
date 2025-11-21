@@ -13,8 +13,11 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Please provide email and password" });
     }
 
-    // البحث عن المستخدم حسب البريد الإلكتروني
-    const user = await User.findOne({ email });
+    // البحث عن المستخدم بدون حساسية حروف
+    const user = await User.findOne({
+      email: { $regex: `^${email}$`, $options: "i" }
+    });
+
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }

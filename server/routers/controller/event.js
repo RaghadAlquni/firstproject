@@ -1,32 +1,26 @@
 const Event = require("../../DB/models/EventSchema.js");
 
 // إنشاء حدث جديد
+// إنشاء حدث جديد
 const createEvent = async (req, res) => {
   try {
-    const {
-      title,
-      coverImage,
-      dateText,
-      date,
-      description,
-      gallery,
-      type,
-    } = req.body;
+    const { title, coverImage, date, description, gallery, type } = req.body;
 
     // التحقق من الحقول الأساسية
-    if (!coverImage || !dateText || !title || !description || !type) {
-      return res.status(400).json({ message: "الرجاء تعبئة جميع الحقول المطلوبة" });
+    if (!title || !coverImage || !description || !type) {
+      return res
+        .status(400)
+        .json({ message: "الرجاء تعبئة جميع الحقول المطلوبة" });
     }
 
     // إنشاء الحدث
     const newEvent = new Event({
-      coverImage,
-      dateText,
-      date,
       title,
+      coverImage,
       description,
-      gallery,
       type,
+      gallery: gallery || [],
+      date: date ? new Date(date) : Date.now(),
     });
 
     await newEvent.save();

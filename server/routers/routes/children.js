@@ -7,6 +7,7 @@ const authorize = require("../middleware/authorization.js");
 
 const {
   addChild,
+  addChildParent,
   confirmChild,
   updateChild,
   deleteChild,
@@ -20,6 +21,10 @@ const {
 // parent = add pending
 // admin/director/assistant = add confirmed
 childRouter.post("/children/add", authenticate, authorize(["parent", "admin", "director", "assistant_director"]), addChild)
+
+// ✅ إضافة طفل جديد
+// parent = add pending
+childRouter.post("/children/publicAdd" , addChildParent)
 
 // ✅ تأكيد طفل بعد إضافته (من الإدارة فقط)
 childRouter.put( "/children/confirm/:id", authenticate, authorize(["admin", "director", "assistant_director"]), confirmChild);

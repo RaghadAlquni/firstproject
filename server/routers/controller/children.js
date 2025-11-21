@@ -78,6 +78,7 @@ const addChild = async (req, res) => {
       subscriptionEnd,
     } = req.body;
 
+    // ========== التحقق الأساسي ==========
     if (!childName || !idNumber || !dateOfBirth || !gender)
       return res.status(400).json({ message: "الاسم، الهوية، الميلاد، الجنس مطلوبة" });
 
@@ -98,33 +99,6 @@ const addChild = async (req, res) => {
     const subscription = await Subscription.findById(subscriptionId);
     if (!subscription || !subscription.isActive)
       return res.status(400).json({ message: "الاشتراك غير متاح" });
-
-    // ========== وليّ الأمر ==========
-    if (u.role === "parent") {
-      if (!branch || !shift)
-        return res.status(400).json({ message: "الفرع والشفت مطلوبان" });
-
-      const b = await Branch.findById(branch);
-      if (!b) return res.status(404).json({ message: "الفرع غير موجود" });
-
-      const child = await Children.create({
-        childName,
-        idNumber,
-        dateOfBirth,
-        gender,
-        guardian,
-        branch,
-        shift,
-        subscription: subscription._id,
-        subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : null,
-        status: "مضاف",
-      });
-
-      return res.status(201).json({
-        message: "تمت إضافة الطفل بنجاح ✅ بانتظار قبول الإدارة",
-        child,
-      });
-    }
 
     // ========== الأدمن ==========
     if (u.role === "admin") {
@@ -206,7 +180,7 @@ const addChild = async (req, res) => {
       });
 
       const phones = getGuardianPhones(child);
-      const msg =`✅ تم تأكيد تسجيل الطفل ${child.childName} في اشتراك ${subscription.name}.\nالمدة: ${subscription.durationType}\nالسعر: ${subscription.price} ريال.`;
+      const msg = `✅ تم تأكيد تسجيل الطفل ${child.childName} في اشتراك ${subscription.name}.\nالمدة: ${subscription.durationType}\nالسعر: ${subscription.price} ريال.`;
       await sendWhatsAppMessage(phones, msg);
 
       return res.status(201).json({
@@ -216,11 +190,69 @@ const addChild = async (req, res) => {
     }
 
     return res.status(403).json({ message: "ليس لديك صلاحية لإضافة طفل" });
+
   } catch (error) {
     console.error("addChild error:", error);
     res.status(500).json({ message: "حدث خطأ أثناء الإضافة ❌", error: error.message });
   }
 };
+
+
+
+// اضافة طفل من البارنتس
+const addChildParent = async (req, res) => {
+  try {
+    const {
+      childName,
+      idNumber,
+      dateOfBirth,
+      gender,
+      guardian,
+      branch,
+      shift,
+      subscriptionId,
+      subscriptionEnd,
+    } = req.body;
+
+    // نفس التحققات
+    if (!childName || !idNumber || !dateOfBirth || !gender)
+      return res.status(400).json({ message: "الاسم، الهوية، الميلاد، الجنس مطلوبة" });
+
+    if (!["بنت", "ولد"].includes(gender))
+      return res.status(400).json({ message: "الجنس يجب أن يكون (بنت) أو (ولد)" });
+
+    if (!Array.isArray(guardian) || guardian.length < 2)
+      return res.status(400).json({ message: "يجب إدخال بيانات وليي أمر اثنين على الأقل" });
+
+    const b = await Branch.findById(branch);
+    if (!b) return res.status(404).json({ message: "الفرع غير موجود" });
+
+    const child = await Children.create({
+      childName,
+      idNumber,
+      dateOfBirth,
+      gender,
+      guardian,
+      branch,
+      shift,
+      subscription: subscriptionId,
+      subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : null,
+      status: "مضاف",
+    });
+
+    return res.status(201).json({
+      message: "تم استلام طلب تسجيل الطفل بنجاح بانتظار موافقة الإدارة",
+      child,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء الإضافة ❌",
+      error: error.message,
+    });
+  }
+};
+
+
 
 // =======================
 // 2️⃣ تأكيد طفل بعد موافقة الإدارة
@@ -421,6 +453,7 @@ const getOneChild = async (req, res) => {
 
 module.exports = {
   addChild,
+  addChildParent,
   confirmChild,
   updateChild,
   deleteChild,

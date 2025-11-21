@@ -65,6 +65,8 @@ app.use(branchRouter)
 const eventRouter = require("./routers/routes/event.js")
 app.use(eventRouter)
 
+const dashboardStateRouter = require("./routers/routes/dashboardState.js")
+app.use(dashboardStateRouter)
 
 const PORT = process.env.PORT || 5000 ;
 app.listen(PORT, () => {

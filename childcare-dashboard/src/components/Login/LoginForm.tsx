@@ -1,87 +1,84 @@
 "use client";
 
-import React, { useState, useReducer } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  authReducer,
-  initialAuthState,
-  decodeRoleFromToken,
-  Role,
-} from "@/Reducer/loginReducer";
+  loginRequest,
+  loginSuccess,
+  loginFailure,
+} from "@/redux/authSlice";
+import { RootState } from "@/redux/store";
+import { jwtDecode } from "jwt-decode";
 import { api } from "@/lib/axios";
+
+interface DecodedToken {
+  _id: string;
+  fullName: string;
+  role: string;
+  shift: string;
+  exp: number;
+}
 
 const Login = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
 
-  const [state, dispatch] = useReducer(authReducer, initialAuthState);
-
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<any>({});
 
-  // التحقق من صحة الإدخال
+  // validate
   const validate = () => {
     let newErrors: any = {};
 
-    if (!email.trim()) {
-      newErrors.email = "يرجى إدخال البريد الإلكتروني";
-    }
-
-    if (!password.trim()) {
-      newErrors.password = "يرجى إدخال كلمة المرور";
-    }
+    if (!email.trim()) newErrors.email = "يرجى إدخال البريد الإلكتروني";
+    if (!password.trim()) newErrors.password = "يرجى إدخال كلمة المرور";
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
-  // إرسال بيانات الدخول
+  // submit
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     try {
-      dispatch({ type: "LOGIN_REQUEST" });
+      dispatch(loginRequest());
 
       const res = await api.post("/login", {
-        email: email,
+        email,
         password,
       });
 
       const token = res.data.token;
-
-      // حفظ التوكن
       localStorage.setItem("token", token);
 
-      // استخراج الرول من JWT
-      const role: Role | null = decodeRoleFromToken(token);
+      dispatch(loginSuccess(token));
 
-      dispatch({ type: "LOGIN_SUCCESS", payload: token });
+      // decode to get role
+      const decoded = jwtDecode<DecodedToken>(token);
+      const role = decoded.role;
 
-      // توجيه حسب الدور
-      if (role === "admin") router.push("/dashboard/admin");
-      else if (role === "director") router.push("/dashboard/director");
-      else if (role === "assistant_director") router.push("/dashboard/assistant-director");
-      else if (role === "teacher") router.push("/dashboard/teacher");
-      else if (role === "assistant_teacher") router.push("/dashboard/assistant-teacher");
-      else if (role === "parent") router.push("/dashboard/parent");
-      else alert("لم يتم تحديد نوع المستخدم!");
+      // redirect based on role
+      if (role === "admin") router.push("/dashboard?role=admin");
+      else if (role === "director") router.push("/dashboard?role=director");
+      else if (role === "teacher") router.push("/dashboard?role=teacher");
+      else if (role === "assistant_teacher") router.push("/dashboard?role=assistant_teacher");
 
     } catch (err: any) {
-      dispatch({ type: "LOGIN_FAILURE", payload: err.message });
+      dispatch(loginFailure("خطأ في تسجيل الدخول"));
       alert("البريد الإلكتروني أو كلمة المرور غير صحيحة");
     }
   };
 
   return (
     <div className="w-full h-screen bg-white flex flex-col items-center justify-center overflow-hidden px-4 md:px-0">
-      
-      {/* الصورة */}
+
       <div className="w-[200px] h-[200px] md:w-[235px] md:h-[235px] bg-[url('https://codia-f2c.s3.us-west-1.amazonaws.com/image/2025-11-16/AJTRe2kLhY.png')] bg-cover bg-no-repeat mt-4" />
 
-      {/* البوكس */}
       <form
         onSubmit={handleSubmit}
         className="flex flex-col w-full max-w-[715px] min-h-[380px] bg-[#f5f5f5] rounded-[12px] mt-10 px-[18px] py-[20px] gap-[20px]"
@@ -90,7 +87,7 @@ const Login = () => {
           يرجى تسجيل الدخول للاستمرار
         </span>
 
-        {/* البريد الإلكتروني */}
+        {/* Email */}
         <div className="flex flex-col gap-[10px]">
           <label className="text-[16px] font-medium text-[#3b3b3b] text-right">
             البريد الإلكتروني
@@ -109,7 +106,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* كلمة المرور */}
+        {/* Password */}
         <div className="flex flex-col gap-[10px]">
           <label className="text-[16px] font-medium text-[#3b3b3b] text-right">
             كلمة المرور
@@ -128,7 +125,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* زر الدخول */}
+        {/* submit */}
         <button
           type="submit"
           className="w-[160px] h-[59px] bg-[#f9b236] text-white rounded-[12px] mx-auto mt-2 shadow-[4px_4px_30px_0_rgba(0,0,0,0.05)] text-[20px] font-medium cursor-pointer"

@@ -24,7 +24,7 @@ export type SidebarLinksType = {
 //  الروابط لكل رول
 export const sidebarLinks: SidebarLinksType = {
   admin: [
-    { name: "الرئيسية", path: "/dashboard/admin", icon: HomeIcon },
+    { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
 
     {
       name: "الأطفال",
@@ -83,7 +83,7 @@ export const sidebarLinks: SidebarLinksType = {
   ],
 
   director: [
-    { name: "الرئيسية", path: "/dashboard/director", icon: HomeIcon },
+    { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
 
     {
       name: "الأطفال",
@@ -139,7 +139,7 @@ export const sidebarLinks: SidebarLinksType = {
   ],
 
   assistant_director: [
-    { name: "الرئيسية", path: "/dashboard/assistant-director", icon: HomeIcon },
+    { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
 
     {
       name: "الأطفال",
@@ -184,7 +184,7 @@ export const sidebarLinks: SidebarLinksType = {
   ],
 
   teacher: [
-    { name: "الرئيسية", path: "/dashboard/teacher", icon: HomeIcon },
+    { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
     { name: "الأطفال", path: "/dashboard/children", icon: ChildrenIcon },
     { name: "التحضير", path: "/dashboard/attendance", icon: AttendanceIcon },
     { name: "الفصول", path: "/dashboard/classes", icon: ClassRoomIcon },
@@ -193,7 +193,7 @@ export const sidebarLinks: SidebarLinksType = {
     assistant_teacher: [
         {
             name: "الرئيسية",
-            path: "/dashboard/teacher",
+            path: "/dashboard",
             icon: HomeIcon,
         },
         {

@@ -1,46 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
-import { decodeRoleFromToken } from "@/Reducer/loginReducer";
+import Navbar from "@/components/dashboard/navbar/navbar";
+import EventList from "@/components/dashboard/eventList/eventList";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { loginSuccess } from "@/redux/authSlice";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const [role, setRole] = useState<string | null>(null);
+  const { role } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const [openPopup, setOpenPopup] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    const extractedRole = decodeRoleFromToken(token);
-    if (!extractedRole) {
-      router.push("/login");
-      return;
-    }
-
-    setRole(extractedRole);
-
-  }, [router]);
-
-  // ⏳ لو ما عرفنا الرول لسه — لا نعرض شي
-  if (!role) {
-    return <div className="w-full h-screen flex justify-center items-center">جاري التحميل...</div>;
-  }
+    const saved = localStorage.getItem("token");
+    if (!saved) return;
+    dispatch(loginSuccess(saved));
+  }, []);
 
   return (
-    <div className="flex flex-row-reverse">
-      {/* ◀ السايدبار */}
-      <Sidebar role={role} />
+    <div className="flex h-screen overflow-hidden">
 
-      {/* ◀ صفحة المحتوى */}
-      <main className="flex-1 p-6 bg-[#f9f9f9]">
-        {children}
-      </main>
+      {/* السايد بار ثابت */}
+      <Sidebar role={role || ""} />
+
+      {/* العمود الرئيسي */}
+      <div className="flex flex-col flex-1 h-full bg-[var(--bg)]">
+
+        {/* النافبار */}
+        <Navbar />
+
+        {/* المحتوى + الايفنت ليست */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* المحتوى (الوسط) → هو الوحيد اللي يتحرك */}
+          <main className="flex-1 p-6 overflow-y-auto">
+            {children}
+          </main>
+
+          {/* الايفنت ليست ثابتة */}
+          <EventList />
+
+        </div>
+      </div>
     </div>
   );
 }

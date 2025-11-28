@@ -44,9 +44,8 @@ const childrenSchema = new mongoose.Schema({
   subscription: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Subscription",
-  required: false,
+  required: true,
 },
-subscriptionEnd: { type: Date },
 
   shift: { type: String, enum: ["صباح", "مساء"], required: true },
 }, {
@@ -54,5 +53,27 @@ subscriptionEnd: { type: Date },
 });
 
 
+
+// لحساب العمر
+childrenSchema.virtual("age").get(function () {
+  if (!this.dateOfBirth) return null;
+
+  const today = new Date();
+  const birthDate = new Date(this.dateOfBirth);
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const month = today.getMonth() - birthDate.getMonth();
+
+  // لو الشهر الحالي أصغر من شهر الميلاد → نقص 1 من العمر
+  if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
+});
+
+// تفعيل الـ virtuals في الناتج JSON
+childrenSchema.set("toJSON", { virtuals: true });
+childrenSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Children", childrenSchema);

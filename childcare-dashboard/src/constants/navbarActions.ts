@@ -11,7 +11,7 @@ export const navbarActions: {
   },
   assistant_director: {
     button: "إضافة معلمة",
-    welcome: "أهلا بكِ في لوحة الإدارة المساعدة",
+    welcome: "أهلا بكِ في لوحة تحكم الإدارة",
   },
   teacher: {
     button: null,
@@ -19,6 +19,6 @@ export const navbarActions: {
   },
   assistant_teacher: {
     button: null,
-    welcome: "أهلا بكِ في لوحة المساعدة",
+    welcome: "أهلا بكِ في لوحة المعلمة",
   },
 };

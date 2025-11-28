@@ -7,6 +7,7 @@ const User = require("../../DB/models/userSchema.js");
 const Branch = require("../../DB/models/branchSchema.js");
 const Classroom = require("../../DB/models/classroomSchema.js");
 const Subscription = require("../../DB/models/subscriptionSchema.js");
+const Payment = require("../../DB/models/paymentSchema.js");
 
 dotenv.config();
 
@@ -74,129 +75,201 @@ const addChild = async (req, res) => {
       branch,
       shift,
       teacherMain,
-      subscriptionId,
-      subscriptionEnd,
+      subscriptionId
     } = req.body;
 
-    // ========== التحقق الأساسي ==========
     if (!childName || !idNumber || !dateOfBirth || !gender)
       return res.status(400).json({ message: "الاسم، الهوية، الميلاد، الجنس مطلوبة" });
 
     if (!["بنت", "ولد"].includes(gender))
-      return res.status(400).json({ message: "الجنس يجب أن يكون (بنت) أو (ولد)" });
+      return res.status(400).json({ message: "الجنس يجب أن يكون بنت أو ولد" });
 
     if (!Array.isArray(guardian) || guardian.length < 2)
-      return res.status(400).json({ message: "يجب إدخال بيانات وليي أمر اثنين على الأقل" });
+      return res.status(400).json({ message: "يجب إدخال بيانات وليي أمر اثنين" });
 
-    for (const g of guardian) {
-      if (!g.guardianName || !g.relationship || !g.phoneNumber)
-        return res.status(400).json({ message: "كل وليّ أمر يحتاج (الاسم/العلاقة/الرقم)" });
+    const existingChild = await Children.findOne({ idNumber: Number(idNumber) })
+      .populate("subscription branch teacherMain");
+
+    if (existingChild) {
+      if (existingChild.status === "مضاف") {
+        return res.status(409).json({
+          message: "الطفل في قائمة الانتظار",
+          child: existingChild,
+          status: "مضاف"
+        });
+      }
+
+      if (existingChild.status === "غير مفعل") {
+        return res.status(409).json({
+          message: "الطفل موجود بالنظام ولكنه غير مفعل — الرجاء الانتقال للتجديد.",
+          child: existingChild,
+          status: "غير مفعل"
+        });
+      }
+
+      if (existingChild.status === "مؤكد") {
+        return res.status(409).json({
+          message: "الطفل مسجل مسبقاً",
+          child: existingChild,
+          status: "مؤكد"
+        });
+      }
     }
-
-    if (!isValidId(subscriptionId))
-      return res.status(400).json({ message: "subscriptionId غير صالح" });
 
     const subscription = await Subscription.findById(subscriptionId);
     if (!subscription || !subscription.isActive)
       return res.status(400).json({ message: "الاشتراك غير متاح" });
 
-    // ========== الأدمن ==========
-    if (u.role === "admin") {
-      if (!branch || !shift || !teacherMain)
-        return res.status(400).json({ message: "branch / shift / teacherMain مطلوبة" });
+    let finalBranch = branch;
+    let finalShift = shift;
 
-      const [b, teacher] = await Promise.all([
-        Branch.findById(branch),
-        User.findById(teacherMain),
-      ]);
-
-      if (!b) return res.status(404).json({ message: "الفرع غير موجود" });
-      if (!teacher || teacher.role !== "teacher")
-        return res.status(400).json({ message: "teacherMain ليس معلماً صالحاً" });
-
-      const classroomId = teacher.classroom;
-      if (!classroomId)
-        return res.status(400).json({ message: "المعلّم لا يملك فصلًا بعد" });
-
-      const child = await Children.create({
-        childName,
-        idNumber,
-        dateOfBirth,
-        gender,
-        guardian,
-        branch,
-        shift,
-        teacherMain,
-        classroom: classroomId,
-        subscription: subscription._id,
-        subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : null,
-        status: "مؤكد",
-      });
-
-      await Classroom.findByIdAndUpdate(classroomId, {
-        $addToSet: { children: child._id },
-      });
-
-      const phones = getGuardianPhones(child);
-      const msg = `✅ تم تأكيد تسجيل الطفل ${child.childName} في اشتراك ${subscription.name}.\nالمدة: ${subscription.durationType}\nالسعر: ${subscription.price} ريال.`;
-      await sendWhatsAppMessage(phones, msg);
-
-      return res.status(201).json({
-        message: "تمت إضافة الطفل بنجاح ✅",
-        child,
-      });
-    }
-
-    // ========== المدير / المساعد ==========
     if (["director", "assistant_director"].includes(u.role)) {
-      if (!teacherMain)
-        return res.status(400).json({ message: "teacherMain مطلوب" });
-
-      const teacher = await User.findById(teacherMain);
-      if (!teacher || teacher.role !== "teacher")
-        return res.status(400).json({ message: "teacherMain ليس معلماً صالحاً" });
-
-      const classroomId = teacher.classroom;
-      if (!classroomId)
-        return res.status(400).json({ message: "المعلّم لا يملك فصلًا بعد" });
-
-      const child = await Children.create({
-        childName,
-        idNumber,
-        dateOfBirth,
-        gender,
-        guardian,
-        branch: u.branch,
-        shift: u.shift,
-        teacherMain,
-        classroom: classroomId,
-        subscription: subscription._id,
-        subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : null,
-        status: "مؤكد",
-      });
-
-      await Classroom.findByIdAndUpdate(classroomId, {
-        $addToSet: { children: child._id },
-      });
-
-      const phones = getGuardianPhones(child);
-      const msg = `✅ تم تأكيد تسجيل الطفل ${child.childName} في اشتراك ${subscription.name}.\nالمدة: ${subscription.durationType}\nالسعر: ${subscription.price} ريال.`;
-      await sendWhatsAppMessage(phones, msg);
-
-      return res.status(201).json({
-        message: "تمت إضافة الطفل بنجاح ✅",
-        child,
-      });
+      finalBranch = u.branch;
+      finalShift = u.shift;
     }
 
-    return res.status(403).json({ message: "ليس لديك صلاحية لإضافة طفل" });
+    if (!teacherMain)
+      return res.status(400).json({ message: "يجب اختيار المعلمة" });
+
+    const teacher = await User.findById(teacherMain);
+    if (!teacher || teacher.role !== "teacher")
+      return res.status(400).json({ message: "المعلمة غير صالحة" });
+
+    const child = await Children.create({
+      childName,
+      idNumber: Number(idNumber),
+      dateOfBirth,
+      gender,
+      guardian,
+      branch: finalBranch,
+      shift: finalShift,
+      teacherMain,
+      classroom: null,
+      subscription: subscription._id,
+      subscriptionStart: new Date(),
+      subscriptionEnd: subscription.subscriptionEnd,
+      status: "مؤكد",
+    });
+
+    /* ⭐ إضافة الطفل للمعلمة */
+    await User.findByIdAndUpdate(
+      teacherMain,
+      { $addToSet: { teacherChildren: child._id } }
+    );
+
+    await Payment.create({
+      amount: subscription.price,
+      child: child._id,
+      branch: finalBranch,
+      shift: finalShift,
+      subscription: subscription._id,
+      paymentType: "تسجيل جديد",
+      addedBy: u._id,
+      note: `تسجيل طفل جديد: ${child.childName}`
+    });
+
+    return res.status(201).json({
+      message: "تمت إضافة الطفل وتفعيل اشتراكه بنجاح ✨",
+      child,
+      status: "مؤكد"
+    });
 
   } catch (error) {
     console.error("addChild error:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء الإضافة ❌", error: error.message });
+    return res.status(500).json({
+      message: "حدث خطأ أثناء الإضافة ❌",
+      error: error.message,
+    });
   }
 };
 
+
+
+const renewSubscription = async (req, res) => {
+  try {
+    const u = req.user;
+    const { childId, subscriptionId, teacherMain } = req.body;
+
+    const child = await Children.findById(childId);
+    if (!child) {
+      return res.status(404).json({ message: "❌ الطفل غير موجود" });
+    }
+
+    const subscription = await Subscription.findById(subscriptionId);
+    if (!subscription) {
+      return res.status(404).json({ message: "❌ الاشتراك غير موجود" });
+    }
+
+    if (child.status === "مضاف") {
+      return res.status(400).json({
+        message: "الطفل في قائمة الانتظار — يجب تأكيد التسجيل أولاً.",
+      });
+    }
+
+    if (child.status === "مؤكد") {
+      return res.status(400).json({
+        message: "هذا الطفل تسجيله جارٍ — لا يمكن تجديد الاشتراك حالياً.",
+      });
+    }
+
+    if (child.status !== "غير مفعل") {
+      return res.status(400).json({
+        message: "لا يمكن تجديد الاشتراك لهذه الحالة.",
+      });
+    }
+
+    let finalBranch = child.branch;
+    let finalShift = child.shift;
+
+    if (["director", "assistant_director"].includes(u.role)) {
+      finalShift = u.shift;
+    }
+
+    child.subscription = subscription._id;
+    child.subscriptionStart = new Date();
+    child.subscriptionEnd = subscription.subscriptionEnd;
+
+    child.teacherMain = teacherMain || child.teacherMain;
+
+    child.branch = finalBranch;
+    child.shift = finalShift;
+
+    child.status = "مؤكد";
+
+    await child.save();
+
+    /* ⭐ إضافة الطفل للمعلمة */
+    if (teacherMain) {
+      await User.findByIdAndUpdate(
+        teacherMain,
+        { $addToSet: { teacherChildren: child._id } }
+      );
+    }
+
+    await Payment.create({
+      amount: subscription.price,
+      child: child._id,
+      branch: finalBranch,
+      shift: finalShift,
+      subscription: subscription._id,
+      paymentType: "تجديد اشتراك",
+      addedBy: u._id,
+      note: `تجديد اشتراك للطفل: ${child.childName}`,
+    });
+
+    return res.status(200).json({
+      message: "تم تجديد الاشتراك بنجاح ✨",
+      child,
+    });
+
+  } catch (error) {
+    console.error("renewSubscription error:", error);
+    res.status(500).json({
+      message: "حدث خطأ أثناء التجديد ❌",
+      error: error.message,
+    });
+  }
+};
 
 
 // اضافة طفل من البارنتس
@@ -211,10 +284,8 @@ const addChildParent = async (req, res) => {
       branch,
       shift,
       subscriptionId,
-      subscriptionEnd,
     } = req.body;
 
-    // نفس التحققات
     if (!childName || !idNumber || !dateOfBirth || !gender)
       return res.status(400).json({ message: "الاسم، الهوية، الميلاد، الجنس مطلوبة" });
 
@@ -236,7 +307,6 @@ const addChildParent = async (req, res) => {
       branch,
       shift,
       subscription: subscriptionId,
-      subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : null,
       status: "مضاف",
     });
 
@@ -244,6 +314,7 @@ const addChildParent = async (req, res) => {
       message: "تم استلام طلب تسجيل الطفل بنجاح بانتظار موافقة الإدارة",
       child,
     });
+
   } catch (error) {
     res.status(500).json({
       message: "حدث خطأ أثناء الإضافة ❌",
@@ -264,35 +335,63 @@ const confirmChild = async (req, res) => {
     const { teacherMain } = req.body;
 
     const child = await Children.findById(id).populate("subscription");
-    if (!child) return res.status(404).json({ message: "الطفل غير موجود" });
+    if (!child)
+      return res.status(404).json({ message: "الطفل غير موجود" });
+
     if (child.status !== "مضاف")
-      return res.status(400).json({ message: "يمكن تأكيد الأطفال بحالة (مضاف) فقط" });
+      return res
+        .status(400)
+        .json({ message: "يمكن تأكيد الأطفال بحالة (مضاف) فقط" });
 
     if (!["director", "assistant_director", "admin"].includes(u.role))
       return res.status(403).json({ message: "صلاحية الإدارة فقط" });
 
+    // تحقق اختيار المعلم (اختياري)
     let teacher = null;
     if (teacherMain) {
       teacher = await User.findById(teacherMain);
-      if (!teacher || teacher.role !== "teacher" || !teacher.classroom)
+      if (!teacher || teacher.role !== "teacher")
         return res.status(400).json({ message: "teacherMain غير صالح" });
     }
 
+    // تحديث بيانات الطفل
     child.teacherMain = teacher ? teacher._id : child.teacherMain;
     child.classroom = teacher ? teacher.classroom : child.classroom;
     child.status = "مؤكد";
     await child.save();
 
+    // ========== 🟧 إضافة الدفع تلقائياً ==========
+    await Payment.create({
+      amount: child.subscription.price,
+      child: child._id,
+      branch: child.branch,
+      subscription: child.subscription._id,
+      paymentType: "تسجيل جديد",
+      addedBy: u._id,
+      note: `تسجيل جديد بعد تأكيد الطفل ${child.childName}`,
+    });
+
+    // إرسال رسالة لولي الأمر
     const phones = getGuardianPhones(child);
-    const msg = `✅ تم تأكيد تسجيل الطفل ${child.childName} في اشتراك ${child.subscription.name}.\nالمدة: ${child.subscription.durationType}\nالسعر: ${child.subscription.price} ريال.`;
+    const msg = `✅ تم تأكيد تسجيل الطفل ${child.childName}.
+الاشتراك: ${child.subscription.name}
+المدة: ${child.subscription.durationType}
+السعر: ${child.subscription.price} ريال.`;
     await sendWhatsAppMessage(phones, msg);
 
-    res.status(200).json({ message: "تم تأكيد الطفل ✅", child });
+    res.status(200).json({
+      message: "تم تأكيد الطفل وإضافة الدفع بنجاح 💰",
+      child,
+    });
   } catch (error) {
     console.error("confirmChild error:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء التأكيد ❌", error: error.message });
+    res.status(500).json({
+      message: "حدث خطأ أثناء التأكيد ❌",
+      error: error.message,
+    });
   }
 };
+
 
 // =======================
 // 3️⃣ تحديث بيانات طفل
@@ -387,6 +486,168 @@ const getChildren = async (req, res) => {
   }
 };
 
+const getConfirmedChildren = async (req, res) => {
+  try {
+    const u = req.user;
+    const { branch, shift } = req.query;
+
+    // الأساس: فقط المؤكدين
+    let filter = { status: "مؤكد" };
+
+    // ================================
+    //         🟦 ADMIN
+    // ================================
+    if (u.role === "admin") {
+      if (branch) filter.branch = branch;
+      if (shift) filter.shift = shift;
+
+    // ================================
+    //     🟧 DIRECTOR / ASSISTANT
+    // ================================
+    } else if (["director", "assistant_director"].includes(u.role)) {
+      filter.branch = u.branch;
+      filter.shift = u.shift;
+
+    // ================================
+    //           🟩 TEACHER
+    // ================================
+    } else if (u.role === "teacher") {
+      filter.teacherMain = u._id;
+
+    // ================================
+    //      🟪 ASSISTANT TEACHER
+    // ================================
+    } else if (u.role === "assistant_teacher") {
+
+      const userData = await User.findById(u._id).populate("assistantClasses");
+      const classes = userData.assistantClasses.map((c) => c._id);
+
+      filter.classroom = { $in: classes };
+    }
+
+    // ================================
+    //         ⭐ جلب البيانات ⭐
+    // ================================
+    const children = await Children.find(filter)
+      .populate({
+        path: "teacherMain",
+        select: "fullName avatar"
+      })
+      .populate({
+        path: "branch",
+        select: "branchName"
+      })
+      .populate({
+        path: "subscription",
+        select: "name durationType price ageRange"
+      })
+      .populate({
+        path: "classroom",
+        select: "className shift"
+      });
+
+    // ================================
+    //            RESPONSE
+    // ================================
+    res.status(200).json({
+      success: true,
+      count: children.length,
+      children,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "خطأ أثناء جلب الأطفال ❌",
+      error: error.message,
+    });
+  }
+};
+
+const getWaitingChildren = async (req, res) => {
+  try {
+    const u = req.user;
+    const { branch, shift } = req.query;
+
+    let filter = { status: "مضاف" };
+
+    // ================================
+    //         🟦 ADMIN
+    // ================================
+    if (u.role === "admin") {
+      if (branch) filter.branch = branch;
+      if (shift) filter.shift = shift;
+
+    // ================================
+    //     🟧 DIRECTOR / ASSISTANT
+    // ================================
+    } else if (["director", "assistant_director"].includes(u.role)) {
+      filter.branch = u.branch;
+      filter.shift = u.shift;
+
+    // ================================
+    //           🟩 TEACHER
+    // ================================
+    } else if (u.role === "teacher") {
+      filter.teacherMain = u._id;
+
+    // ================================
+    //      🟪 ASSISTANT TEACHER
+    // ================================
+    } else if (u.role === "assistant_teacher") {
+
+      const userData = await User.findById(u._id).populate("assistantClasses");
+      const classes = userData.assistantClasses.map((c) => c._id);
+
+      filter.classroom = { $in: classes };
+    }
+
+    // ================================
+    //         ⭐ جلب البيانات ⭐
+    // ================================
+    const children = await Children.find(filter)
+      .populate({
+        path: "teacherMain",
+        select: "fullName avatar"
+      })
+      .populate({
+        path: "branch",
+        select: "branchName"
+      })
+      .populate({
+        path: "subscription",
+        select: "name durationType price ageRange"
+      })
+      .populate({
+        path: "guardian",
+        select: "phoneNumber relationship"
+      })
+
+      .populate({
+        path: "classroom",
+        select: "className shift"
+      })
+
+      
+
+    // ================================
+    //            RESPONSE
+    // ================================
+    res.status(200).json({
+      success: true,
+      count: children.length,
+      children,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "خطأ أثناء جلب الأطفال ❌",
+      error: error.message,
+    });
+  }
+};
+
 
 const markAllInactive = async (req, res) => {
   try {
@@ -428,37 +689,246 @@ const markAllInactive = async (req, res) => {
 
 const getOneChild = async (req, res) => {
   try {
-    const { id } = req.params;
+    const civilId = req.params.id;
 
-    const child = await Children.findById(id).populate("teacherMain subscription branch classroom");
+    console.log("🔎 Searching for child with civilId =", civilId);
 
-    if (!child) return res.status(404).json({ message: "❌ الطفل غير موجود" });
+    // 1️⃣ التحقق من رقم السجل المدني
+    if (!civilId || civilId.trim() === "") {
+      return res.status(400).json({ message: "رقم السجل المدني مطلوب" });
+    }
 
-    // لو المدير أو المساعد فقط يشوف أطفال نفس الفرع والشفت
-    if (["director", "assistant_director"].includes(req.user.role)) {
+    if (!/^\d+$/.test(civilId)) {
+      return res.status(400).json({ message: "رقم السجل المدني يجب أن يكون أرقام فقط" });
+    }
+
+    if (civilId.length < 9) {
+      return res.status(400).json({ message: "رقم السجل المدني غير صالح" });
+    }
+
+    // 2️⃣ البحث عن الطفل
+    const child = await Children.findOne({ idNumber: Number(civilId) })
+      .populate("teacherMain subscription branch classroom");
+
+    if (!child) {
+      return res.status(404).json({ message: "❌ الطفل غير موجود" });
+    }
+
+    // 3️⃣ منطق الوصول 
+    const userRole = req.user.role;
+
+    if (!["director", "assistant_director"].includes(userRole)) {
       if (
-        String(child.branch) !== String(req.user.branch) ||
+        String(child.branch?._id) !== String(req.user.branch) ||
         child.shift !== req.user.shift
       ) {
-        return res.status(403).json({ message: "🚫 لا يمكنك الوصول إلى هذا الطفل" });
+        return res.status(403).json({
+          message: "🚫 لا يمكنك الوصول إلى هذا الطفل",
+        });
       }
     }
 
-    res.status(200).json({ message: "✅ تم جلب بيانات الطفل", child });
+    // 4️⃣ تفاصيل إضافية حسب الحالة
+    let extraDetails = {};
+
+    if (child.status === "مؤكد") {
+      extraDetails = {
+        statusMessage: "الطفل مسجل ومؤكد في النظام",
+        branchName: child.branch?.branchName,
+        shift: child.shift,
+        teacherName: child.teacherMain?.fullName || "غير محدد",
+        subscriptionName: child.subscription?.name || "لا يوجد اشتراك",
+        subscriptionPrice: child.subscription?.price || 0,
+        subscriptionStart: child.subscriptionStart,
+        subscriptionEnd: child.subscriptionEnd,
+      };
+    }
+
+    if (child.status === "مضاف") {
+      extraDetails = {
+        statusMessage: "الطفل في قائمة الانتظار",
+        branchName: child.branch?.branchName,
+        shift: child.shift,
+        note: "الطفل مضاف ويحتاج إلى تأكيد قبل الاعتماد أو التجديد.",
+      };
+    }
+
+    if (child.status === "غير مفعل") {
+      extraDetails = {
+        statusMessage: "الطفل غير مفعل — يمكن تفعيل الاشتراك عبر التجديد",
+        branchName: child.branch?.branchName,
+        shift: child.shift,
+      };
+    }
+
+    // 5️⃣ إرجاع البيانات
+    return res.status(200).json({
+      message: "✔️ تم جلب بيانات الطفل",
+      child,
+      details: extraDetails,
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "حدث خطأ أثناء جلب الطفل ❌", error: error.message });
+    console.log("getOneChild error:", error);
+    return res.status(500).json({
+      message: "حدث خطأ أثناء جلب بيانات الطفل",
+      error: error.message,
+    });
   }
 };
+
+
+// ================================
+// ✅ تأكيد اكثر من طفل بعد إضافته (من الإدارة فقط)
+// ================================
+const confirmManyChildren = async (req, res) => {
+  try {
+    const u = req.user;
+    const { ids, teacherMain } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "لا يوجد أطفال مختارين" });
+    }
+
+    if (!["admin", "director", "assistant_director"].includes(u.role)) {
+      return res.status(403).json({ message: "صلاحية الإدارة فقط" });
+    }
+
+    const teacher = await User.findById(teacherMain).populate("classroom");
+    if (!teacher || teacher.role !== "teacher") {
+      return res.status(400).json({ message: "معلمة غير صالحة" });
+    }
+
+    const children = await Children.find({ _id: { $in: ids } })
+      .populate("subscription")
+      .populate("classroom");
+
+    for (const child of children) {
+      // 🌟 1) shift محفووظ أساساً عند الإضافة
+      const finalShift = child.shift;
+
+      if (!finalShift) {
+        return res.status(400).json({
+          message: `لا يمكن تأكيد الطفل ${child.childName} لأن الشفت غير محفوظ`,
+        });
+      }
+
+      // 🌟 2) تحديث بيانات الطفل
+      child.status = "مؤكد";
+      child.teacherMain = teacher._id;
+      child.classroom = teacher.classroom;
+      // ❌ لا تلمسين shift (محفوظ مسبقاً)
+      await child.save();
+
+      // 🌟 3) الدفع
+      await Payment.create({
+        amount: child.subscription.price,
+        child: child._id,
+        branch: child.branch,
+        subscription: child.subscription._id,
+        shift: finalShift, 
+        paymentType: "تسجيل جديد",
+        addedBy: u._id,
+        note: `تأكيد مجموعة - الطفل: ${child.childName}`,
+      });
+
+      // 🌟 4) الرسالة لولي الأمر
+      const phones = getGuardianPhones(child);
+      const msg = `🎉 تم تأكيد تسجيل ${child.childName} مع المعلمة ${teacher.fullName}`;
+      await sendWhatsAppMessage(phones, msg);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "تم تأكيد جميع الأطفال وإسنادهم للمعلمة بنجاح ✔️",
+    });
+  } catch (error) {
+    console.error("confirmManyChildren error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "خطأ أثناء تأكيد المجموعة ❌",
+      error: error.message,
+    });
+  }
+};
+
+const deleteManyChildren = async (req, res) => {
+  try {
+    const u = req.user;
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "لا يوجد أطفال مختارين للحذف" });
+    }
+
+    if (!["admin", "director", "assistant_director"].includes(u.role)) {
+      return res.status(403).json({ message: "صلاحية الإدارة فقط" });
+    }
+
+    // جلب الأطفال قبل الحذف لإرسال رسائل وباقي التفاصيل
+    const children = await Children.find({ _id: { $in: ids } })
+      .populate("classroom")
+      .populate("teacherMain");
+
+    if (children.length === 0) {
+      return res.status(404).json({ message: "الأطفال غير موجودين" });
+    }
+
+    for (const child of children) {
+      // تنظيف من classroom
+      if (child.classroom) {
+        await Classroom.findByIdAndUpdate(child.classroom, {
+          $pull: { children: child._id }
+        });
+      }
+
+      // تنظيف من teacher
+      if (child.teacherMain) {
+        await User.findByIdAndUpdate(child.teacherMain, {
+          $pull: { teacherChildren: child._id }
+        });
+      }
+
+      // إرسال رسالة لولي الأمر
+      const phones = getGuardianPhones(child);
+      const msg = `❌ تم رفض تسجيل الطفل ${child.childName} من قبل الإدارة.  
+للاستفسار الرجاء التواصل مع المركز.`;
+      await sendWhatsAppMessage(phones, msg);
+
+      // حذف الطفل نفسه
+      await Children.findByIdAndDelete(child._id);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "تم حذف الأطفال المختارين بنجاح",
+      deletedCount: children.length,
+    });
+  } catch (error) {
+    console.error("rejectManyChildren error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "خطأ أثناء حذف الأطفال ❌",
+      error: error.message,
+    });
+  }
+};
+
 
 
 module.exports = {
   addChild,
   addChildParent,
   confirmChild,
+  renewSubscription,
   updateChild,
   deleteChild,
   expireSubscriptions,
   getChildren,
+  getConfirmedChildren,
+  getWaitingChildren,
   markAllInactive,
   getOneChild,
+  confirmManyChildren,
+  deleteManyChildren,
 };

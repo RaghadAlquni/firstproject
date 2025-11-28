@@ -5,6 +5,7 @@ const morgan = require('morgan')
 require("./DB/db.js");
 const axios = require("axios");
 
+require("./scripts/subscriptionMonitor.js");
 
 const app = express();
 // احنا نحتاج نسوي ميدل وير يحول لنا الجيسون الى كائن جافاسكربت
@@ -15,6 +16,7 @@ const phoneNumberId = process.env.WHATSAPP_PHONE_ID;
 // Morgan: middleware for logging HTTP requests (method, URL, status, response time)
 app.use(morgan('dev'))
 app.use(cors());
+
 
 app.post("/send-whatsapp", async (req, res) => {
   try {
@@ -48,7 +50,6 @@ app.get('/', (req, res) => {
   res.send('Hello Morgan!');
 })
 
-
 const childRoutes = require("./routers/routes/children.js");
 app.use(childRoutes);
 
@@ -65,8 +66,18 @@ app.use(branchRouter)
 const eventRouter = require("./routers/routes/event.js")
 app.use(eventRouter)
 
+const subscriptionRouter = require("./routers/routes/subscription.js")
+app.use(subscriptionRouter)
+
+const classroomRouter = require("./routers/routes/classroom.js")
+app.use(classroomRouter)
+
 const dashboardStateRouter = require("./routers/routes/dashboardState.js")
 app.use(dashboardStateRouter)
+
+const moneyRouter = require("./routers/routes/money.js")
+app.use(moneyRouter)
+
 
 const PORT = process.env.PORT || 5000 ;
 app.listen(PORT, () => {

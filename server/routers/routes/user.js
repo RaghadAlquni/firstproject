@@ -10,7 +10,7 @@ const { addUser, getUser,
   getDirector,
   getAllAssistantDirectors,
   getAssistantDirector,
-  getDirectorDetails} = require("../controller/user")
+  getDirectorDetails, getManagedTeachers} = require("../controller/user")
   const { getDashboard } = require("../controller/dashboardState.js");
   
 
@@ -39,6 +39,7 @@ userRouter.get("/assistantTeachers", authenticate, authorize(["admin", "director
 userRouter.get("/teacher/:id", authenticate, authorize(["admin", "director", "assistant_director"]), getTeacher);
 userRouter.get("/assistantTeacher/:id", authenticate, authorize(["admin", "director", "assistant_director"]), getAssistantTeacher);
 userRouter.get("/directorDetails/:id", authenticate, authorize(["admin", "director"]), getDirectorDetails);
+userRouter.get("/managedTeachers", authenticate, authorize(["director", "assistant_director"]), getManagedTeachers);
 
 
 module.exports = userRouter;

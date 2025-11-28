@@ -13,18 +13,22 @@ const {
   deleteChild,
   expireSubscriptions,
   getChildren,
+  getConfirmedChildren,
   markAllInactive,
-  getOneChild} = require("../controller/children.js")
+  getOneChild, renewSubscription, getWaitingChildren, confirmManyChildren, deleteManyChildren} = require("../controller/children.js")
 
   
 // ✅ إضافة طفل جديد
 // parent = add pending
 // admin/director/assistant = add confirmed
 childRouter.post("/children/add", authenticate, authorize(["parent", "admin", "director", "assistant_director"]), addChild)
+// تجديد الاشتراك 
+childRouter.post("/renewSubscription", authenticate, renewSubscription)
 
 // ✅ إضافة طفل جديد
 // parent = add pending
 childRouter.post("/children/publicAdd" , addChildParent)
+
 
 // ✅ تأكيد طفل بعد إضافته (من الإدارة فقط)
 childRouter.put( "/children/confirm/:id", authenticate, authorize(["admin", "director", "assistant_director"]), confirmChild);
@@ -42,10 +46,19 @@ childRouter.put("/children/inactive/all", authenticate,authorize(["admin"]),mark
 
 // ✅ جلب جميع الأطفال
 childRouter.get("/children", authenticate ,authorize(["admin", "director", "assistant_director"]),getChildren);
+// ✅ جلب جميع الأطفال المؤكدين
+childRouter.get("/confirmedChildren", authenticate ,  authorize(["admin", "director", "assistant_director", "teacher", "assistant_teacher"]), getConfirmedChildren);
+// ✅ جلب جميع الأطفال المضافين
+childRouter.get("/waitingChildren", authenticate ,  authorize(["admin", "director", "assistant_director", "teacher", "assistant_teacher"]), getWaitingChildren);
 
-// ✅ حذف طفل (من الإدارة فقط)
+// ✅ حذف اكثر من طفل بعد إضافته (من الإدارة فقط)
 childRouter.delete("/children/delete/:id", authenticate, authorize(["admin", "director", "assistant_director"]), deleteChild);
 
+// ✅ تأكيد اكثر من طفل بعد إضافته (من الإدارة فقط)
+childRouter.put("/confirmMany", authenticate, confirmManyChildren);
+
+// ✅ حذف طفل (من الإدارة فقط)
+childRouter.delete("/deleteMany", authenticate, authorize(["admin", "director", "assistant_director"]), deleteManyChildren);
 
 
 module.exports = childRouter;

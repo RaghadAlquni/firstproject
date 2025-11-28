@@ -26,29 +26,12 @@ export const sidebarLinks: SidebarLinksType = {
   admin: [
     { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
 
-    {
-      name: "الأطفال",
-      path: "/dashboard/kids",
-      icon: ChildrenIcon,
-      children: [
-        { name: "الأطفال المسجلين", path: "/dashboard/children", icon: ChildrenIcon},
-        { name: "قائمة الانتظار", path: "/dashboard/children/waiting", icon: ChildrenIcon },
-      ],
-    },
+    { name: "الأطفال", path: "/dashboard/children/confirmed", icon: ChildrenIcon },
+
+    { name: "الإدارة", path: "/dashboard/children", icon: StaffIcon },
 
     {
-      name: "الموظفات",
-      path: "/dashboard/staff",
-      icon: StaffIcon,
-      children: [
-        { name: "الإدارة", path: "/dashboard/directors", icon: StaffIcon },
-        { name: "الإدارة المساعدة", path: "/dashboard/assistantDirectors", icon: StaffIcon },
-        { name: "المساعدات", path: "/dashboard/children/assistant", icon: StaffIcon },
-      ],
-    },
-
-    {
-      name: "الأساتذة",
+      name: "المعلمات",
       path: "/dashboard/teachers",
       icon: TeacherIcon,
       children: [
@@ -90,23 +73,15 @@ export const sidebarLinks: SidebarLinksType = {
       path: "/dashboard/kids",
       icon: ChildrenIcon,
       children: [
-        { name: "الأطفال المسجلين", path: "/dashboard/children", icon: ChildrenIcon },
+        { name: "الأطفال المسجلين", path: "/dashboard/children/confirmed", icon: ChildrenIcon },
         { name: "قائمة الانتظار", path: "/dashboard/children/waiting", icon: ChildrenIcon },
       ],
     },
 
-    {
-      name: "الموظفات",
-      path: "/dashboard/staff",
-      icon: StaffIcon,
-      children: [
-        { name: "الإدارة المساعدة", path: "/dashboard/assistantDirectors", icon: StaffIcon },
-        { name: "المساعدات", path: "/dashboard/children/assistant", icon: StaffIcon },
-      ],
-    },
+    { name: "الإدارة", path: "/dashboard/children", icon: StaffIcon },
 
     {
-      name: "الأساتذة",
+      name: "المعلمات",
       path: "/dashboard/teachers",
       icon: TeacherIcon,
       children: [
@@ -185,7 +160,7 @@ export const sidebarLinks: SidebarLinksType = {
 
   teacher: [
     { name: "الرئيسية", path: "/dashboard", icon: HomeIcon },
-    { name: "الأطفال", path: "/dashboard/children", icon: ChildrenIcon },
+    { name: "الأطفال", path: "/dashboard/children/confirmed", icon: ChildrenIcon },
     { name: "التحضير", path: "/dashboard/attendance", icon: AttendanceIcon },
     { name: "الفصول", path: "/dashboard/classes", icon: ClassRoomIcon },
     { name: "التقويم", path: "/dashboard/calendar", icon: CalendarIcon },

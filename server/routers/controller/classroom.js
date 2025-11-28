@@ -3,7 +3,7 @@ const Branch = require("../../DB/models/branchSchema.js");
 const Child = require("../../DB/models/childrenSchema.js")
 const User = require("../../DB/models/userSchema");
 
-// 🏫 إنشاء فصل جديد بواسطة المعلم
+//  🏫 إنشاء فصل جديد بواسطة المعلم واضافه الكلاس تلقائيا للمعلم 
 const addClassroomByTeacher = async (req, res) => {
   try {
     const { className } = req.body;
@@ -29,6 +29,7 @@ const addClassroomByTeacher = async (req, res) => {
       });
     }
 
+    // ✨ إنشاء الكلاس
     const newClassroom = new Classroom({
       className: className.trim(),
       branch: teacher.branch,
@@ -38,15 +39,22 @@ const addClassroomByTeacher = async (req, res) => {
 
     await newClassroom.save();
 
+    // ✨ ربط الكلاس في حساب المعلم تلقائيًا
+    const teacherData = await User.findById(teacher._id);
+    teacherData.classroom = newClassroom._id;   // ← هنا الإضافة التلقائية
+    await teacherData.save();
+
     res.status(201).json({
-      message: "✅ تم إنشاء الفصل بنجاح",
+      message: "✅ تم إنشاء الفصل وربطه بحساب المعلّم بنجاح",
       classroom: newClassroom,
     });
+
   } catch (error) {
     console.error("Error adding classroom:", error);
     res.status(500).json({ message: "حدث خطأ أثناء إنشاء الفصل ❌", error: error.message });
   }
 };
+
 
 // 👶 دالة: المعلم يضيف طفل إلى كلاس معين
 const addChildToClassroom = async (req, res) => {

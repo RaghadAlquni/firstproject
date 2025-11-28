@@ -434,6 +434,31 @@ const getDirectorDetails = async (req, res) => {
   }
 };
 
+// ✅ جلب المعلمين التابعين للمدير أو المساعد فقط
+const getManagedTeachers = async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!["director", "assistant_director"].includes(user.role)) {
+      return res
+        .status(403)
+        .json({ message: "❌ هذا الإجراء متاح للمدير أو المساعد فقط" });
+    }
+
+    const director = await User.findById(user._id).populate(
+      "managedTeachers",
+      "_id fullName"
+    );
+
+    res.status(200).json({
+      teachers: director.managedTeachers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "❌ خطأ أثناء جلب المعلمين" });
+  }
+};
+
 
 module.exports = {
   addUser,
@@ -447,4 +472,5 @@ module.exports = {
   getAllAssistantDirectors,
   getAssistantDirector,
   getDirectorDetails,
+  getManagedTeachers
 };

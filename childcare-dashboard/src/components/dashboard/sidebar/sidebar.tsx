@@ -25,9 +25,10 @@ const Sidebar = ({ role }: { role: string }) => {
     <>
 
       <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 right-4 z-50 text-3xl text-[#373737]"
-      >
+  onClick={() => setIsOpen(true)}
+  className="lg:hidden fixed top-7 right-4 z-50 text-3xl text-[#373737]"
+>
+
         <div className="space-y-1">
           <span className="block w-6 h-[3px] bg-[var(--text)] rounded"></span>
           <span className="block w-6 h-[3px] bg-[var(--text)] rounded"></span>
@@ -44,21 +45,21 @@ const Sidebar = ({ role }: { role: string }) => {
       )}
 
       {/* السايد بار */}
-      <aside
-        dir="rtl"
-        className={`
-          w-[270px]  min-h-screen bg-[var(--card)] border-l border-[var(--border)]
-          p-4 pt-6 flex flex-col items-end overflow-y-auto
-          z-[9998]
+<aside
+  dir="rtl"
+  className={`w-[270px] lg:min-w-[270px] min-h-screen bg-[var(--card)] border-l border-[var(--border)]
+    p-4 pt-6 flex flex-col items-end overflow-y-auto
+    z-[9998]
 
-          /* لابتوب */
-          md:static md:translate-x-0
+    /* desktop */
+    lg:static lg:translate-x-0
 
-          /* موبايل — Drawer */
-          fixed top-0 right-0 transform transition-transform duration-300
-          ${isOpen ? "translate-x-0" : "translate-x-full"}
-        `}
-      >
+    /* mobile + ipad drawer */
+    fixed top-0 right-0 transform transition-transform duration-300
+    ${isOpen ? "translate-x-0" : "translate-x-full"}
+  `}
+>
+
 
          {/* زر الإغلاق للجوال فقط */}
                 <button
@@ -79,7 +80,7 @@ const Sidebar = ({ role }: { role: string }) => {
         </div>
 
         {/* البحث */}
-        <div className="w-full flex items-center bg-[var(--card)] border border-[var(--border)] rounded-[13px] py-2 px-3 mb-4 justify-between">
+        <div className="w-full flex items-center bg-[var(--bg)] border border-[var(--border)] rounded-[13px] py-2 px-3 mb-4 justify-between">
           <input
             type="text"
             placeholder="ابحث عن موظف او طالب او فرع"

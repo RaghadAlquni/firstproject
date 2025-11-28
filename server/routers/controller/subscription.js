@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const Subscription = require("../../DB/models/subscriptionSchema.js");
 
-// 🔹 helper function: يتحقق من أن المستخدم مدير أو مساعد نفس الفرع والشفت
+// ----------------------------------------------------------
+// Helper: يتحقق إذا المستخدم نفس الفرع والشفت
+// ----------------------------------------------------------
 const isSameScope = (sub, user) => {
   if (["director", "assistant_director"].includes(user.role)) {
     return (
@@ -9,26 +11,25 @@ const isSameScope = (sub, user) => {
       sub.shift === user.shift
     );
   }
-  return true; // للأدمن
+  return true;
 };
 
-// ✅ 1️⃣ إضافة اشتراك جديد
+// ----------------------------------------------------------
+// 1️⃣ إضافة اشتراك جديد
+// ----------------------------------------------------------
 const addSubscription = async (req, res) => {
   try {
     const user = req.user;
     const { name, price, ageRange, durationType, description, branch, shift } = req.body;
 
-    // التحقق من الأدوار
     if (!["admin", "director", "assistant_director"].includes(user.role)) {
       return res.status(403).json({ message: "🚫 غير مصرح لك بإضافة اشتراك" });
     }
 
-    // تحقق من الحقول المطلوبة
     if (!name || !price || !ageRange?.from || !ageRange?.to || !durationType) {
       return res.status(400).json({ message: "❌ جميع الحقول الأساسية مطلوبة" });
     }
 
-    // المدير أو المساعد يضاف حسب فرعه وشفتة فقط
     let finalBranch = branch;
     let finalShift = shift;
 
@@ -37,13 +38,16 @@ const addSubscription = async (req, res) => {
       finalShift = user.shift;
     }
 
-    // تحقق من تكرار الاسم في نفس الفرع والشفت
-    const existing = await Subscription.findOne({ name, branch: finalBranch, shift: finalShift });
+    const existing = await Subscription.findOne({
+      name,
+      branch: finalBranch,
+      shift: finalShift
+    });
+
     if (existing) {
       return res.status(400).json({ message: "❌ يوجد اشتراك بنفس الاسم في هذا الفرع والشفت" });
     }
 
-    // إنشاء اشتراك جديد
     const newSub = await Subscription.create({
       name,
       price,
@@ -52,7 +56,7 @@ const addSubscription = async (req, res) => {
       description,
       branch: finalBranch,
       shift: finalShift,
-      createdBy: user._id,
+      createdBy: user._id
     });
 
     res.status(201).json({ message: "✅ تم إنشاء الاشتراك بنجاح", data: newSub });
@@ -61,18 +65,18 @@ const addSubscription = async (req, res) => {
   }
 };
 
-// ✅ 2️⃣ تعديل اشتراك جزئي
+// ----------------------------------------------------------
+// 2️⃣ تعديل اشتراك جزئي
+// ----------------------------------------------------------
 const updateSubscription = async (req, res) => {
   try {
     const { id } = req.params;
     const user = req.user;
 
-    // تحقق من الصلاحية
     if (!["admin", "director", "assistant_director"].includes(user.role)) {
       return res.status(403).json({ message: "🚫 غير مصرح لك بتعديل الاشتراكات" });
     }
 
-    // تحقق من ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "❌ رقم المعرف غير صالح" });
     }
@@ -80,25 +84,25 @@ const updateSubscription = async (req, res) => {
     const sub = await Subscription.findById(id);
     if (!sub) return res.status(404).json({ message: "❌ الاشتراك غير موجود" });
 
-    // تحقق من النطاق
     if (!isSameScope(sub, user)) {
       return res.status(403).json({ message: "🚫 لا يمكنك تعديل اشتراك خارج فرعك أو شفتك" });
     }
 
-    // تعديل جزئي
     const fields = ["name", "price", "ageRange", "durationType", "description", "isActive"];
     fields.forEach((f) => {
       if (req.body[f] !== undefined && req.body[f] !== "") sub[f] = req.body[f];
     });
 
-    const updated = await sub.save();
-    res.status(200).json({ message: "✅ تم تعديل الاشتراك بنجاح", subscription: updated });
+    await sub.save();
+    res.status(200).json({ message: "✅ تم تعديل الاشتراك بنجاح", subscription: sub });
   } catch (error) {
     res.status(500).json({ message: "❌ خطأ أثناء تعديل الاشتراك", error: error.message });
   }
 };
 
-// ✅ 4️⃣ حذف اشتراك
+// ----------------------------------------------------------
+// 3️⃣ حذف اشتراك
+// ----------------------------------------------------------
 const deleteSubscription = async (req, res) => {
   try {
     const { id } = req.params;
@@ -122,12 +126,15 @@ const deleteSubscription = async (req, res) => {
   }
 };
 
-// ✅ 5️⃣ عرض كل الاشتراكات
+// ----------------------------------------------------------
+// 4️⃣ عرض كل الاشتراكات
+// ----------------------------------------------------------
 const getAllSubscriptions = async (req, res) => {
   try {
     const user = req.user;
 
-    // المدير والمدير المساعد يشوفون اشتراكات فرعهم فقط
+    let filter = {};
+
     if (["director", "assistant_director"].includes(user.role)) {
       filter.branch = user.branch;
       filter.shift = user.shift;
@@ -139,14 +146,16 @@ const getAllSubscriptions = async (req, res) => {
 
     res.status(200).json({
       count: subs.length,
-      subscriptions: subs,
+      subscriptions: subs
     });
   } catch (error) {
     res.status(500).json({ message: "❌ خطأ أثناء جلب الاشتراكات", error: error.message });
   }
 };
 
-// ✅ 6️⃣ عرض اشتراك واحد
+// ----------------------------------------------------------
+// 5️⃣ عرض اشتراك واحد
+// ----------------------------------------------------------
 const getOneSubscription = async (req, res) => {
   try {
     const { id } = req.params;
@@ -165,69 +174,80 @@ const getOneSubscription = async (req, res) => {
 
     res.status(200).json({
       message: "✅ تم جلب تفاصيل الاشتراك بنجاح",
-      subscription: sub,
+      subscription: sub
     });
   } catch (error) {
     res.status(500).json({ message: "❌ خطأ أثناء جلب الاشتراك", error: error.message });
   }
 };
 
-
-// جلب الاشتراكات حسب الفرع والشفت
+// ----------------------------------------------------------
+// 6️⃣ جلب الاشتراكات حسب الفرع + الشفت (AddChild يستعملها)
+// ----------------------------------------------------------
 const getSubscriptionsByBranchAndShift = async (req, res) => {
   try {
-    const { branchId, shift } = req.query;
+    const { branch, shift } = req.query;
 
-    // تحقق من وجود المعطيات
-    if (!branchId || !shift) {
-      return res.status(400).json({ message: "يجب تمرير branchId و shift في الاستعلام" });
+    if (!branch || !shift) {
+      return res.status(400).json({ message: "❌ يجب تمرير branch و shift" });
     }
 
-    const subscriptions = await Subscription.find({
-      branch: branchId,
-      shift: shift,
+    const subs = await Subscription.find({
+      branch,
+      shift,
       isActive: true
-    }).populate("branch", "name city district locationLink") // عرض بيانات الفرع والشفت هذا أيضًا
+    }).sort({ createdAt: -1 });
 
-
-    res.status(200).json(subscriptions);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "حدث خطأ أثناء جلب الاشتراكات" });
+    res.status(200).json({ subscriptions: subs });
+  } catch (error) {
+    res.status(500).json({ message: "❌ خطأ أثناء جلب الاشتراكات", error: error.message });
   }
 };
 
-// ✅ جلب كل الاشتراكات المفعلة الخاصة بفرع معين (مع جميع بياناتها)
+// ----------------------------------------------------------
+// 7️⃣ جلب جميع الاشتراكات المفعلة لفرع بدون شفت
+// ----------------------------------------------------------
 const getActiveSubscriptionsByBranch = async (req, res) => {
   try {
     const { branchId } = req.params;
 
-    if (!branchId) {
-      return res.status(400).json({ message: "يجب تمرير معرف الفرع (branchId) في الرابط" });
-    }
-
-    // جلب الاشتراكات المفعلة لهذا الفرع
-    const activeSubscriptions = await Subscription.find({
+    const subs = await Subscription.find({
       branch: branchId,
       isActive: true
-    })
-      .populate("branch", "name city district locationLink") // عرض بيانات الفرع أيضًا
-      .sort({ createdAt: -1 }); // الأحدث أولًا (اختياري)
+    }).sort({ createdAt: -1 });
 
-    if (!activeSubscriptions.length) {
-      return res.status(404).json({ message: "لا توجد اشتراكات مفعّلة لهذا الفرع" });
-    }
-
-    res.status(200).json({
-      branch: activeSubscriptions[0].branch,
-      total: activeSubscriptions.length,
-      subscriptions: activeSubscriptions
-    });
+    res.status(200).json({ subscriptions: subs });
   } catch (error) {
-    console.error("❌ خطأ أثناء جلب الاشتراكات:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء جلب الاشتراكات" });
+    res.status(500).json({ message: "❌ خطأ أثناء جلب الاشتراكات", error: error.message });
   }
 };
+
+// ✅ جلب اشتراكات مرتبطة بفرع وشفت المدير أو المساعد
+const getMySubscriptions = async (req, res) => {
+  try {
+    const user = req.user;
+
+    let filter = {};
+
+    if (["director", "assistant_director"].includes(user.role)) {
+      filter.branch = user.branch;
+      filter.shift = user.shift;
+      filter.isActive = true;
+    }
+
+    const subscriptions = await Subscription.find(filter).sort({ price: 1 });
+
+    return res.status(200).json({
+      subscriptions,
+    });
+  } catch (error) {
+    console.error("❌ Error in getMySubscriptions:", error);
+    return res.status(500).json({
+      message: "حدث خطأ أثناء جلب الاشتراكات",
+    });
+  }
+};
+
 
 module.exports = {
   addSubscription,
@@ -235,6 +255,7 @@ module.exports = {
   deleteSubscription,
   getAllSubscriptions,
   getOneSubscription,
-  getActiveSubscriptionsByBranch,
   getSubscriptionsByBranchAndShift,
+  getActiveSubscriptionsByBranch,
+  getMySubscriptions,
 };

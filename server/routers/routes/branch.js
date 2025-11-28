@@ -1,5 +1,6 @@
 const express = require("express")
-const { addBranch, getAllBranches, getBranchById, updateBranch, getBranchDetails, getBranchStats, deleteBranch} = require("../controller/branch.js")
+
+const { addBranch, getAllBranches, getBranchById, updateBranch, getBranchDetails, getBranchStats, deleteBranch, getTeachersByBranchAndShift} = require("../controller/branch.js")
 const authenticate = require("../middleware/authentication.js");
 const authorize = require("../middleware/authorization.js");
 
@@ -18,6 +19,9 @@ branchRouter.get("/branch/:id/details", authenticate, authorize(["admin", "direc
 branchRouter.get("/branch/:id/state", authenticate, authorize(["admin", "director", "assistant_director"]), getBranchStats) // count
 
 branchRouter.delete("/branch/:id", authenticate, authorize(["admin"]), deleteBranch)
+
+
+branchRouter.get("/teachers", getTeachersByBranchAndShift);
 
 
 module.exports = branchRouter;

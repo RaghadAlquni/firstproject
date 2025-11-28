@@ -4,7 +4,15 @@ const subscriptionSchema = new mongoose.Schema({
   name: { type: String, required: true }, // اسم الباقة
   price: { type: Number, required: true }, // السعر
   description: { type: String },
-  duration: { type: String }, // مثلاً: "شهري" أو "فصلي"
+  
+  durationType: {
+  type: String,
+  enum: ["فصلي", "شهري", "اسبوعي"],
+  required: true
+},
+subscriptionStart: { type: Date },
+
+subscriptionEnd: { type: Date },
 
   branch: {
     type: mongoose.Schema.Types.ObjectId,

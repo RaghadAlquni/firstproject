@@ -4,25 +4,76 @@ const subscriptionRouter = express.Router();
 const authentication = require("../middleware/authentication.js");
 const authorize = require("../middleware/authorization.js");
 
-const { addSubscription, updateSubscription, deleteSubscription, getAllSubscriptions, getOneSubscription, getActiveSubscriptionsByBranch, getSubscriptionsByBranchAndShift} = require("../controller/subscription.js");
+const {
+  addSubscription,
+  updateSubscription,
+  deleteSubscription,
+  getAllSubscriptions,
+  getOneSubscription,
+  getActiveSubscriptionsByBranch,
+  getSubscriptionsByBranchAndShift,
+  getMySubscriptions,
+} = require("../controller/subscription.js");
 
-// ✅ إضافة اشتراك
-subscriptionRouter.post("/subscription/add", authentication, authorize(["admin", "director", "assistant_director"]), addSubscription);
 
-// ✅ تعديل اشتراك
-subscriptionRouter.put( "/subscription/update/:id", authentication, authorize(["admin", "director", "assistant_director"]), updateSubscription);
+// -------------------------------------------
+// 🟢 إضافة اشتراك
+// -------------------------------------------
+subscriptionRouter.post(
+  "/subscription/add",
+  authentication,
+  authorize(["admin", "director", "assistant_director"]),
+  addSubscription
+);
 
-// ✅ حذف اشتراك
-subscriptionRouter.delete( "/subscription/delete/:id", authentication, authorize(["admin", "director", "assistant_director"]), deleteSubscription);
+// -------------------------------------------
+// 🟡 تعديل اشتراك
+// -------------------------------------------
+subscriptionRouter.put(
+  "/subscription/update/:id",
+  authentication,
+  authorize(["admin", "director", "assistant_director"]),
+  updateSubscription
+);
 
-// ✅ عرض كل الاشتراكات
-subscriptionRouter.get("/subscription/all", authentication, authorize(["admin", "director", "assistant_director", "parent"]), getAllSubscriptions);
+// -------------------------------------------
+// 🔴 حذف اشتراك
+// -------------------------------------------
+subscriptionRouter.delete(
+  "/subscription/delete/:id",
+  authentication,
+  authorize(["admin", "director", "assistant_director"]),
+  deleteSubscription
+);
 
-// ✅ عرض اشتراك واحد
-subscriptionRouter.get("/subscription/:id", authentication, authorize(["admin", "director", "assistant_director", "parent"]), getOneSubscription);
-// عرض اشتراك واحد على اساس البرانش والشفت
-subscriptionRouter.get("/SubscriptionsByBranchAndShift", getActiveSubscriptionsByBranch);
-// عرض اشتراك واحد على اساس البرانش
-subscriptionRouter.get("/SubscriptionsByBranch", getSubscriptionsByBranchAndShift);
+// -------------------------------------------
+// 🟣 عرض كل الاشتراكات
+// -------------------------------------------
+subscriptionRouter.get(
+  "/subscription/all",
+  authentication,
+  authorize(["admin", "director", "assistant_director", "parent"]),
+  getAllSubscriptions
+);
+
+// -------------------------------------------
+// 🔵 عرض اشتراك واحد
+// -------------------------------------------
+subscriptionRouter.get(
+  "/subscription/:id",
+  authentication,
+  authorize(["admin", "director", "assistant_director", "parent"]),
+  getOneSubscription
+);
+
+
+// ✅ 1) جلب الاشتراكات حسب الفرع + الفترة  (يستخدمه AddChild)
+subscriptionRouter.get(
+  "/subscriptions",
+  authentication,
+  authorize(["admin", "director", "assistant_director"]),
+  getSubscriptionsByBranchAndShift
+);
+subscriptionRouter.get("/mySubscription", authentication, authorize(["director", "assistant_director"]), getMySubscriptions);
 
 module.exports = subscriptionRouter;

@@ -53,25 +53,25 @@ export default function AdminHome() {
   const s = data.stats;
 
   return (
-    <div className="w-full ">
+    <div className="w-full bg-[var(--bg)]">
 
       {/* العنوان */}
-      <h1 className="text-[32px] font-bold text-right my-4">
+      <h1 className="text-[32px] font-bold text-right my-4 text-[var(--text)]">
         نظرة عامة على المركز
       </h1>
 
       {/* ٤ كروت */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 border-[var(--border)]">
-        <StatCard number={s.totalChildren} label="طفل" icon={<ChildrenIcon className="w-[32px] h-[32px]"/> } color="#F9B236" />
-        <StatCard number={s.totalTeachers} label="معلمة" icon={<TeachersIcon className="w-[32px] h-[32px]"/> } color="#17B3DC" />
-        <StatCard number={s.totalManager} label="إداريات" icon={<StaffIcon className="w-[32px] h-[32px]"/> } color="#F9B236"/>        
-        <StatCard number={s.totalEmployees} label="موظف" icon={<EmployeeIcon className="w-[32px] h-[32px]"/> } color="#17B3DC" />
+        <StatCard number={s.totalChildren} label="طفل" icon={<ChildrenIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#F9B236" />
+        <StatCard number={s.totalTeachers} label="معلمة" icon={<TeachersIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#17B3DC" />
+        <StatCard number={s.totalManager} label="إداريات" icon={<StaffIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#F9B236"/>        
+        <StatCard number={s.totalEmployees} label="موظف" icon={<EmployeeIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#17B3DC" />
       </div>
 
       {/* صف: الفروع + الطلبات */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-        <InfoCard title={`${s.totalBranches} فرع`} desc="مجموع الفروع" icon={<BranchIcon className="w-[32px] h-[32px]"/> } color="#F9B236" />
-        <InfoCard title={`${s.totalRequests} طلب تسجيل`} desc="الأطفال المضافين" icon={<AddIcon className="w-[32px] h-[32px]"/> } color="#F9B236" />
+        <InfoCard title={`${s.totalBranches} فرع`} desc="مجموع الفروع" icon={<BranchIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#F9B236" />
+        <InfoCard title={`${s.totalRequests} طلب تسجيل`} desc="الأطفال المضافين" icon={<AddIcon className="w-[32px] h-[32px] text-[var(--text)]"/> } color="#F9B236" />
       </div>
 
       {/* الشارتات */}
@@ -86,9 +86,9 @@ export default function AdminHome() {
 /* الكروت */
 function StatCard({ number, label, icon, color }: any) {
   return (
-    <div className="bg-white rounded-[20px] border border-[var(--border)] shadow p-5 flex items-center justify-between h-[110px]">
+    <div className="bg-[var(--card)] rounded-[20px] border border-[var(--border)] shadow p-5 flex items-center justify-between h-[110px]">
       <div className="text-right">
-        <h3 className="text-[26px] font-bold">{number} {label}</h3>
+        <h3 className="text-[26px] text-[var(--text)] font-bold">{number} {label}</h3>
         <p className="text-gray-500 text-[14px]">
           مجموع {label === "طفل" ? "الأطفال" : label === "معلمة" ? "المعلمات" : label}
         </p>
@@ -104,9 +104,9 @@ function StatCard({ number, label, icon, color }: any) {
 
 function InfoCard({ title, desc, icon, color}: any) {
   return (
-    <div className="bg-white rounded-[20px] p-6 shadow border border-[var(--border)] flex items-center justify-between h-[120px]">
+    <div className="bg-[var(--card)] rounded-[20px] p-6 shadow border border-[var(--border)] flex items-center justify-between h-[120px]">
       <div className="text-right">
-        <h2 className="text-[28px] font-bold">{title}</h2>
+        <h2 className="text-[28px] text-[var(--text)] font-bold">{title}</h2>
         <p className="text-gray-500 mt-1">{desc}</p>
       </div>
 <div className="w-[60px] h-[60px] rounded-full flex items-center justify-center"

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const classroomSchema = new mongoose.Schema({
-  className: { type: String, required: true }, // مثال: فصل التمهيدي أو KG1
+  className: { type: String, required: true },
   branch: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Branch",
@@ -16,7 +16,6 @@ const classroomSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-    unique: true, // عشان كل معلم له فصل واحد فقط
   },
   teacherAssistants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User"}],
   children: [

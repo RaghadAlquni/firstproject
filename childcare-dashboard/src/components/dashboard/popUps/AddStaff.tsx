@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import AddIcon from "../../../../public/icons/addIcon";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import Swal from "sweetalert2"; // ⬅️ NEW
 
 type PopupProps = {
   open: boolean;
@@ -15,14 +16,15 @@ interface Branch {
   branchName: string;
 }
 
-export default function Popup({ open, setOpen }: PopupProps) {
+export default function AddStaff({ open, setOpen }: PopupProps) {
   if (!open) return null;
 
-  // 🔹 بيانات اليوزر من الريدوكس
   const { role: userRole, branch: userBranch, shift: userShift } =
     useSelector((state: RootState) => state.auth.user || {});
 
-  // 🔹 ستايت الفورم
+  // 🌟 
+  const [loading, setLoading] = useState(false);
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [idNumber, setIdNumber] = useState("");
@@ -33,7 +35,6 @@ export default function Popup({ open, setOpen }: PopupProps) {
 
   const [branches, setBranches] = useState<Branch[]>([]);
 
-  // ================= جلب الفروع =================
   useEffect(() => {
     if (!open) return;
 
@@ -60,6 +61,7 @@ export default function Popup({ open, setOpen }: PopupProps) {
   // ================= Submit — إضافة الموظف =================
   const handleAddUser = async (e: any) => {
     e.preventDefault();
+    setLoading(true); // 🌟 to Loading
 
     try {
       const token = localStorage.getItem("token");
@@ -71,7 +73,6 @@ export default function Popup({ open, setOpen }: PopupProps) {
           Authorization: `Bearer ${token}`,
         },
 
-        // 🔥 هنا السحر… لو المدير ما يقدر يغيّر الفرع أو الفترة
         body: JSON.stringify({
           fullName,
           email,
@@ -86,11 +87,24 @@ export default function Popup({ open, setOpen }: PopupProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "حدث خطأ");
+        Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: data.message || "حدث خطأ أثناء الإضافة",
+          confirmButtonColor: "#e84141",
+        });
+
+        setLoading(false); // 🌟 NEW
         return;
       }
 
-      alert("✔️ تم إضافة الموظف بنجاح");
+      Swal.fire({
+        icon: "success",
+        title: "تمت الإضافة بنجاح",
+        text: "تم إضافة الموظف للنظام",
+        confirmButtonColor: "#F9B236",
+      });
+
       setOpen(false);
 
       setFullName("");
@@ -102,11 +116,16 @@ export default function Popup({ open, setOpen }: PopupProps) {
       setShift("");
 
     } catch (error) {
-      alert("❌ خطأ في الاتصال بالسيرفر");
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "خطأ في الاتصال بالسيرفر",
+        confirmButtonColor: "#e84141",
+      });
     }
-  };
 
-  // ======================= UI =======================
+    setLoading(false); // 🌟 NEW
+  };
 
   return (
     <div className="fixed inset-0 bg-[#373737]/50 flex items-center justify-center z-[9999] px-4">
@@ -129,6 +148,7 @@ export default function Popup({ open, setOpen }: PopupProps) {
 
         <form className="flex flex-col gap-5 mt-2" onSubmit={handleAddUser}>
 
+         
           {/* الاسم + الهوية */}
           <div className="flex gap-5">
             <input
@@ -245,9 +265,16 @@ export default function Popup({ open, setOpen }: PopupProps) {
           <div className="flex justify-center mt-3">
             <button
               type="submit"
-              className="flex justify-center items-center bg-[#f9b236] h-[40px] w-[120px] rounded-[13px] text-white font-medium gap-2 text-[16px]"
+              className="flex justify-center items-center bg-[#f9b236] h-[40px] w-[120px] rounded-[13px] text-white font-medium gap-2 text-[16px] disabled:opacity-60"
+              disabled={loading} // 🌟 NEW
             >
-              <AddIcon className="w-5 h-5" /> إضافة
+              {loading ? (
+                <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></span>
+              ) : (
+                <>
+                  <AddIcon className="w-5 h-5" /> إضافة
+                </>
+              )}
             </button>
           </div>
 

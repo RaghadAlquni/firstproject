@@ -237,7 +237,33 @@ const deleteBranch = async (req, res) => {
   }
 };
 
+const getTeachersByBranchAndShift = async (req, res) => {
+  try {
+    const { branch, shift } = req.query;
+
+    if (!branch || !shift) {
+      return res.status(400).json({
+        message: "الرجاء تحديد الفرع والفترة (branch & shift)",
+      });
+    }
+
+    const teachers = await User.find({
+      role: "teacher",
+      branch: branch,
+      shift: shift,
+    }).select("_id fullName");
+
+    res.json({ teachers });
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    res.status(500).json({
+      message: "حدث خطأ أثناء جلب المعلمات",
+      error,
+    });
+  }
+};
+
 
 module.exports = {
-    addBranch, getAllBranches, getBranchById, updateBranch, getBranchDetails, getBranchStats, deleteBranch
+    addBranch, getAllBranches, getBranchById, updateBranch, getBranchDetails, getBranchStats, deleteBranch, getTeachersByBranchAndShift
 };

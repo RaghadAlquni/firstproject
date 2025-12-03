@@ -426,7 +426,7 @@ const RenewForm = ({ teachers, subscriptions }: any) => {
     if (child.status === "مضاف")
       return showAlert({
         icon: "warning",
-        title: "قائمة الانتظار",
+        title: "الطفل في قائمة الانتظار",
         text: "لا يمكن التجديد.",
       });
 
@@ -535,7 +535,7 @@ const SubmitButton = ({ label }: any) => (
   <div className="flex justify-center mt-3">
     <button
       type="submit"
-      className="min-w-[180px] h-[52px] bg-[#F9B236] text-white rounded-full text-[17px] font-semibold shadow-md hover:bg-[#e6a62f] transition"
+      className="min-w-[180px] h-[52px] bg-[#F9B236] text-white rounded-full text-[17px] font-semibold shadow-sm hover:bg-[#e6a62f] transition"
     >
       {label}
     </button>

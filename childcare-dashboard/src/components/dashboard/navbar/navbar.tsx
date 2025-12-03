@@ -32,11 +32,11 @@ const Navbar = () => {
           </div>
 
           {/* القسم الأيسر */}
-          <div className="flex flex-row-reverse justify-start items-center gap-3 md:gap-4 md:self-center md:ml-3 ml-3">
+          <div className="flex flex-row-reverse justify-start items-center gap-3 md:gap-4 md:self-center md:ml-3 ml-1">
             
-            <div className="group flex items-center gap-3 bg-[var(--bordergray)] border border-[var(--bordergray)] rounded-full px-1 py-1">
+            <div className="group flex items-center gap-3 bg-[var(--bordergray)] border border-[var(--bordergray)] rounded-xl px-1 py-1">
               <div
-                className="w-10 h-10 rounded-full bg-cover bg-center"
+                className="w-10 h-10 rounded-lg bg-cover bg-center"
                 style={{
                   backgroundImage: `url(${
                     user?.avatar ||
@@ -58,7 +58,7 @@ const Navbar = () => {
             </div>
 
             {/* الإشعارات */}
-            <div className="relative border border-[var(--bordergray)] rounded-full p-3">
+            <div className="relative border border-[var(--bordergray)] rounded-xl p-3">
               <NotificationIcon className="w-5 h-5 text-[var(--text)]" />
               <div className="absolute -top-1 -right-1 bg-[#bf1515] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 <p className="pt-1">3</p>
@@ -69,7 +69,7 @@ const Navbar = () => {
             {roleData.button && (
               <button
                 onClick={() => setOpenPopup(true)}
-                className="px-4 py-2 bg-[#F9B236] text-white rounded-full cursor-pointer"
+                className="px-4 py-2 bg-[#F9B236] text-white rounded-xl cursor-pointer"
               >
                 <p className="mt-1">{roleData.button}</p>
               </button>

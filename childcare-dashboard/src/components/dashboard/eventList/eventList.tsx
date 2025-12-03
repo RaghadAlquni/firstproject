@@ -57,7 +57,7 @@ export default function EventsSidebar() {
       {/* زر الجوال */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#F9B236] shadow-lg flex items-center justify-center"
+        className="lg:hidden fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#F9B236] shadow-sm flex items-center justify-center"
       >
         <Calendar />
       </button>

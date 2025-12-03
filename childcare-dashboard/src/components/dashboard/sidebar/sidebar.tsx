@@ -64,7 +64,7 @@ const Sidebar = ({ role }: { role: string }) => {
          {/* زر الإغلاق للجوال فقط */}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="md:hidden text-3xl self-end mb-4 text-[#373737]"
+                  className="lg:hidden text-3xl self-end mb-4 text-[#373737]"
                 >
                   <FiX />
                 </button>

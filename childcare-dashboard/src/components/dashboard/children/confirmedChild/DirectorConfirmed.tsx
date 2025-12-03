@@ -1,7 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import ProfileIcon from "../../../../../public/icons/profileIcon";
-import RemoveUser from "../../../../../public/icons/removeUser";
 import AddChildPopUp from "../../popUps/AddChild";
 
 interface Guardian {

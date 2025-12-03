@@ -265,7 +265,7 @@ export default function AddStaff({ open, setOpen }: PopupProps) {
           <div className="flex justify-center mt-3">
             <button
               type="submit"
-              className="flex justify-center items-center bg-[#f9b236] h-[40px] w-[120px] rounded-[13px] text-white font-medium gap-2 text-[16px] disabled:opacity-60"
+              className="flex justify-center items-center bg-[#f9b236] h-[40px] w-[120px] rounded-[13px] text-white cursor-pointer font-medium gap-2 text-[16px] disabled:opacity-60"
               disabled={loading} // 🌟 NEW
             >
               {loading ? (

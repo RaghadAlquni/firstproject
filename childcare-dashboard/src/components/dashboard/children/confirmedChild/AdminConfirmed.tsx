@@ -1,7 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import ProfileIcon from "../../../../../public/icons/profileIcon";
-import RemoveUser from "../../../../../public/icons/removeUser";
 
 interface Guardian {
   phoneNumber: string;
@@ -70,7 +68,7 @@ export default function AdminConfirmed() {
       {/* ========================================================= */}
       <div className="hidden md:block">
         <div className="bg-[var(--card)] rounded-[10px] border border-[var(--border)] overflow-hidden">
-          <table className="w-full table-auto text-right border-collapse">
+          <table className="w-full table-auto text-right border-collapse shadow-sm">
             <thead className="bg-[rgba(249,178,54,0.1)] text-[var(--text)] font-bold">
               <tr className="border-b border-[var(--border)]">
                 <th className="p-4 border-l border-[var(--border)]">اسم الطفل</th>
@@ -124,14 +122,16 @@ export default function AdminConfirmed() {
                     {item.subscription?.durationType || "—"}
                   </td>
 
-                  <td className="p-4 border-l border-[var(--border)]">
-                    <div className="flex justify-start gap-2">
-                      <ProfileIcon className="w-[24px] h-[24px] text-[var(--text)] cursor-pointer" />
-                      <span className="text-[var(--text)]"> + </span>
-                      <RemoveUser className="w-[24px] h-[24px] text-[var(--text)] cursor-pointer" />
-                    </div>
-                  </td>
-                  
+                  <td className="p-3 flex justify-center gap-3">
+
+                  <button className="w-8 h-8 pt-2 flex items-center justify-center cursor-pointer rounded-md bg-gray-100 hover:bg-gray-200 transition">
+                    ✏️
+                  </button>
+
+                  <button className="w-8 h-8 pt-2 flex items-center justify-center cursor-pointer rounded-md bg-red-100 hover:bg-red-200 transition">
+                    🗑️
+                  </button>
+                </td>
                 </tr>
 
                 
@@ -160,9 +160,8 @@ export default function AdminConfirmed() {
               </h2>
 
               <div className="flex items-center gap-2">
-                <ProfileIcon className="w-[22px] h-[22px] text-[var(--text)]" />
-                <span className="text-[var(--text)] font-bold">+</span>
-                <RemoveUser className="w-[22px] h-[22px] text-[var(--text)]" />
+                <p className="w-[22px] h-[22px] text-[var(--text)]"> ✏️ </p>
+                <p className="w-[22px] h-[22px] text-[var(--text)]"> 🗑️ </p>
               </div>
             </div>
 

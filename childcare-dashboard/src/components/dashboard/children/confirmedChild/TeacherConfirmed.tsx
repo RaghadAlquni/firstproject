@@ -60,11 +60,9 @@ export default function TeacherConfirmed() {
       {/* ===== Header ===== */}
       <div className="flex flex-row justify-between items-center mb-6">
 
-        <h1 className="text-[24px] font-bold text-right text-[var(--text)]">
-          <span className="text-[#d5d5d5] text-[20px] md:font-meduim">الرئيسية</span>
-          <span className="mx-1 text-[var(--text)] text-[20px] md:font-meduim"> / </span>
+        <h2 className="text-[28px] font-bold font-bold text-right text-[var(--text)]">
           <span>أطفالي</span>
-        </h1>
+        </h2>
       </div>
 
       {/* ===== TABLE ===== */}

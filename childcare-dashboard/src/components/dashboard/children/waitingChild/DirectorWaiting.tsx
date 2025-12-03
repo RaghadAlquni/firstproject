@@ -202,7 +202,7 @@ const filteredChildren = children.filter((child) => {
       <h1 className="text-[24px] font-bold text-right text-[var(--text)]">
         <span className="text-[#d5d5d5] text-[20px] md:font-medium">الأطفال</span>
         <span className="mx-1 text-[var(--text)] text-[20px] md:font-medium">/</span>
-        <span>قائمة الأطفال </span>
+        <span>قائمة الانتظار </span>
       </h1>
 
       <input

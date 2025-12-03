@@ -28,27 +28,16 @@ export const sidebarLinks: SidebarLinksType = {
 
     { name: "الأطفال", path: "/dashboard/children/confirmed", icon: ChildrenIcon },
 
-    { name: "الإدارة", path: "/dashboard/children", icon: StaffIcon },
-
-    {
-      name: "المعلمات",
-      path: "/dashboard/teachers",
-      icon: TeacherIcon,
+    { name: "الإدارة", path: "/dashboard/management", icon: StaffIcon,
       children: [
-        { name: "المعلمات الرئيسيات", path: "/dashboard/teachers", icon: TeacherIcon },
-        { name: "المعلمات المساعدات", path: "/dashboard/assistantTeachers", icon: TeacherIcon },
+        { name: "مدراء الفروع", path: "/dashboard/management/director", icon: StaffIcon },
+        { name: "الادراة المساعدة", path: "/dashboard/management/assistantDirector", icon: StaffIcon },
       ],
     },
 
-    {
-      name: "التحضير",
-      path: "/dashboard/attendance",
-      icon: AttendanceIcon,
-      children: [
-        { name: "الأطفال", path: "/dashboard/childrenAttendance", icon: ChildrenIcon },
-        { name: "الموظفات", path: "/dashboard/employeeAttendance", icon: StaffIcon },
-      ],
-    },
+    { name: "المعلمات", path: "/dashboard/teachers/teacher", icon: TeacherIcon },
+
+    { name: "التحضير", path: "/dashboard/attendance", icon: AttendanceIcon },
 
     { name: "الفروع", path: "/dashboard/branches", icon: BranchIcon },
 
@@ -78,25 +67,18 @@ export const sidebarLinks: SidebarLinksType = {
       ],
     },
 
-    { name: "الإدارة", path: "/dashboard/children", icon: StaffIcon },
+    { name: "الإدارة", path: "/dashboard/management/assistantDirector", icon: StaffIcon },
 
-    {
-      name: "المعلمات",
-      path: "/dashboard/teachers",
-      icon: TeacherIcon,
-      children: [
-        { name: "المعلمات الرئيسيات", path: "/dashboard/teachers", icon: TeacherIcon },
-        { name: "المعلمات المساعدات", path: "/dashboard/assistantTeachers", icon: TeacherIcon },
-      ],
-    },
+    { name: "المعلمات", path: "/dashboard/teachers/teacher", icon: TeacherIcon },
+
 
     {
       name: "التحضير",
       path: "/dashboard/attendance",
       icon: AttendanceIcon,
       children: [
-        { name: "الأطفال", path: "/dashboard/childrenAttendance", icon: ChildrenIcon },
-        { name: "الموظفات", path: "/dashboard/employeeAttendance", icon: StaffIcon },
+        { name: "الأطفال", path: "/dashboard/attendance/director/directorChildren", icon: ChildrenIcon },
+        { name: "الموظفات", path: "/dashboard/attendance/director/directorEmployee", icon: StaffIcon },
       ],
     },
 

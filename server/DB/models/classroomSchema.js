@@ -21,7 +21,7 @@ const classroomSchema = new mongoose.Schema({
   children: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Child",
+      ref: "Children",
     },
   ],
 }, { timestamps: true });

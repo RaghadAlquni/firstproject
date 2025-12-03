@@ -157,6 +157,45 @@ const addChild = async (req, res) => {
       { $addToSet: { teacherChildren: child._id } }
     );
 
+    /* ⭐ إضافة الطفل للمدير الذي قام بالتسجيل */
+    if (u.role === "director") {
+      await User.findByIdAndUpdate(
+        u._id,
+        { $addToSet: { managedChildren: child._id } }
+      );
+    }
+
+    /* ⭐ إذا مساعد مدير هو الذي سجّل الطفل → نضيفه للمدير الأساسي */
+    if (u.role === "assistant_director") {
+      if (u.directorId) {
+        await User.findByIdAndUpdate(
+          u.directorId,
+          { $addToSet: { managedChildren: child._id } }
+        );
+      }
+    }
+
+    /* ⭐⭐ إضافة الطفل للمدير المساعد التابع للمدير ⭐⭐ */
+    const mainDirector = await User.findOne({
+      role: "director",
+      branch: finalBranch,
+      shift: finalShift,
+    });
+
+    if (mainDirector) {
+      const assistant = await User.findOne({
+        role: "assistant_director",
+        directorId: mainDirector._id
+      });
+
+      if (assistant) {
+        await User.findByIdAndUpdate(
+          assistant._id,
+          { $addToSet: { managedChildren: child._id } }
+        );
+      }
+    }
+
     await Payment.create({
       amount: subscription.price,
       child: child._id,
@@ -183,8 +222,7 @@ const addChild = async (req, res) => {
   }
 };
 
-
-
+// تجديد الاشتراك 
 const renewSubscription = async (req, res) => {
   try {
     const u = req.user;
@@ -225,15 +263,40 @@ const renewSubscription = async (req, res) => {
       finalShift = u.shift;
     }
 
+    /* ⭐⭐ تحديد المدير القديم ⭐⭐ */
+    const oldDirector = await User.findOne({
+      role: "director",
+      branch: child.branch,
+      shift: child.shift,
+    });
+
+    /* ⭐⭐ حذف الطفل من المدير القديم + مساعده ⭐⭐ */
+    if (oldDirector) {
+      await User.findByIdAndUpdate(
+        oldDirector._id,
+        { $pull: { managedChildren: child._id } }
+      );
+
+      const oldAssistant = await User.findOne({
+        role: "assistant_director",
+        directorId: oldDirector._id
+      });
+
+      if (oldAssistant) {
+        await User.findByIdAndUpdate(
+          oldAssistant._id,
+          { $pull: { managedChildren: child._id } }
+        );
+      }
+    }
+
+    /* ⭐ تحديث بيانات الاشتراك */
     child.subscription = subscription._id;
     child.subscriptionStart = new Date();
     child.subscriptionEnd = subscription.subscriptionEnd;
-
     child.teacherMain = teacherMain || child.teacherMain;
-
     child.branch = finalBranch;
     child.shift = finalShift;
-
     child.status = "مؤكد";
 
     await child.save();
@@ -244,6 +307,35 @@ const renewSubscription = async (req, res) => {
         teacherMain,
         { $addToSet: { teacherChildren: child._id } }
       );
+    }
+
+    /* ⭐⭐ تحديد المدير الجديد ⭐⭐ */
+    let newDirectorId = null;
+
+    if (u.role === "director") newDirectorId = u._id;
+    if (u.role === "assistant_director") newDirectorId = u.directorId;
+
+    const newDirector = await User.findById(newDirectorId);
+
+    /* ⭐⭐ إضافة الطفل للمدير الجديد ⭐⭐ */
+    if (newDirector) {
+      await User.findByIdAndUpdate(
+        newDirector._id,
+        { $addToSet: { managedChildren: child._id } }
+      );
+
+      /* ⭐⭐ إضافة الطفل للمساعد الجديد ⭐⭐ */
+      const newAssistant = await User.findOne({
+        role: "assistant_director",
+        directorId: newDirector._id
+      });
+
+      if (newAssistant) {
+        await User.findByIdAndUpdate(
+          newAssistant._id,
+          { $addToSet: { managedChildren: child._id } }
+        );
+      }
     }
 
     await Payment.create({
@@ -270,6 +362,8 @@ const renewSubscription = async (req, res) => {
     });
   }
 };
+
+
 
 
 // اضافة طفل من البارنتس
@@ -804,7 +898,7 @@ const confirmManyChildren = async (req, res) => {
       .populate("classroom");
 
     for (const child of children) {
-      // 🌟 1) shift محفووظ أساساً عند الإضافة
+      // 🌟 1) التأكد من وجود الشفت
       const finalShift = child.shift;
 
       if (!finalShift) {
@@ -813,20 +907,19 @@ const confirmManyChildren = async (req, res) => {
         });
       }
 
-      // 🌟 2) تحديث بيانات الطفل
+      // 🌟 2) تحديث الطفل
       child.status = "مؤكد";
       child.teacherMain = teacher._id;
       child.classroom = teacher.classroom;
-      // ❌ لا تلمسين shift (محفوظ مسبقاً)
       await child.save();
 
-      // 🌟 3) الدفع
+      // 🌟 3) إنشاء عملية الدفع
       await Payment.create({
         amount: child.subscription.price,
         child: child._id,
         branch: child.branch,
         subscription: child.subscription._id,
-        shift: finalShift, 
+        shift: finalShift,
         paymentType: "تسجيل جديد",
         addedBy: u._id,
         note: `تأكيد مجموعة - الطفل: ${child.childName}`,
@@ -836,6 +929,41 @@ const confirmManyChildren = async (req, res) => {
       const phones = getGuardianPhones(child);
       const msg = `🎉 تم تأكيد تسجيل ${child.childName} مع المعلمة ${teacher.fullName}`;
       await sendWhatsAppMessage(phones, msg);
+
+      // ────────────────────────────────────────────────
+      // ⭐⭐ 5) إضافة الطفل للمدير + المدير المساعد ⭐⭐
+      // ────────────────────────────────────────────────
+
+      // 🔍 نجيب المدير الخاص بالفرع والشفت
+      const director = await User.findOne({
+        role: "director",
+        branch: child.branch,
+        shift: child.shift,
+      });
+
+      // 🔵 إضافة الطفل للمدير
+      if (director) {
+        await User.findByIdAndUpdate(
+          director._id,
+          { $addToSet: { managedChildren: child._id } }
+        );
+
+        // 🔍 نجيب المدير المساعد التابع له
+        const assistant = await User.findOne({
+          role: "assistant_director",
+          directorId: director._id
+        });
+
+        // 🔵 إضافة الطفل للمدير المساعد
+        if (assistant) {
+          await User.findByIdAndUpdate(
+            assistant._id,
+            { $addToSet: { managedChildren: child._id } }
+          );
+        }
+      }
+
+      // ────────────────────────────────────────────────
     }
 
     return res.status(200).json({
@@ -851,6 +979,7 @@ const confirmManyChildren = async (req, res) => {
     });
   }
 };
+
 
 const deleteManyChildren = async (req, res) => {
   try {

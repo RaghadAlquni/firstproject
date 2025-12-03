@@ -78,6 +78,8 @@ app.use(dashboardStateRouter)
 const moneyRouter = require("./routers/routes/money.js")
 app.use(moneyRouter)
 
+const attendanceRouter = require("./routers/routes/attendance.js")
+app.use(attendanceRouter)
 
 const PORT = process.env.PORT || 5000 ;
 app.listen(PORT, () => {

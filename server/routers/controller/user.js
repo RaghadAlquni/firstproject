@@ -316,14 +316,43 @@ const getAllDirectors = async (req, res) => {
   try {
     const directors = await User.find({ role: "director" })
       .select("-password")
-      .populate("assistantDirectorId", "fullName email");
+      .populate("assistantDirectorId", "fullName email")
+      .populate("branch", "branchName")
+      .populate("managedChildren", "_id"); // مهم جداً
 
-    if (!directors.length)
+    if (!directors.length) {
       return res.status(404).json({ message: "⚠️ لا يوجد مديرين" });
+    }
 
-    res.status(200).json({ count: directors.length, directors });
+    const formatted = directors.map((director) => ({
+      _id: director._id,
+      fullName: director.fullName,
+      role: director.role,  
+      email: director.email,
+      phone: director.phone,
+      avatar: director.avatar,
+      branch: director.branch?.branchName || (typeof director.branch === "string" ? director.branch : "غير محدد"),
+      shift: director.shift || "غير محدد",
+
+      // 🟢 أصبح يعتمد على managedChildren
+      childrenCount: director.managedChildren?.length || 0,
+
+      // 🟡 الموظفين نتركها كما هي الآن
+      employeesCount: director.managedTeachers
+        ? director.managedTeachers.length
+        : 0,
+    }));
+
+    res.status(200).json({
+      count: formatted.length,
+      directors: formatted,
+    });
   } catch (error) {
-    res.status(500).json({ message: "❌ خطأ في جلب المديرين", error: error.message });
+    console.error("getAllDirectors error:", error);
+    res.status(500).json({
+      message: "❌ خطأ في جلب المديرين",
+      error: error.message,
+    });
   }
 };
 
@@ -347,16 +376,94 @@ const getDirector = async (req, res) => {
 // جلب كل المديرين المساعدين
 const getAllAssistantDirectors = async (req, res) => {
   try {
-    const assistants = await User.find({ role: "assistant_director" })
-      .select("-password")
-      .populate("directorId", "fullName email");
+    const u = req.user; 
 
-    if (!assistants.length)
-      return res.status(404).json({ message: "⚠️ لا يوجد مديرين مساعدين" });
+    let assistants;
 
-    res.status(200).json({ count: assistants.length, assistants });
+    //  لو Admin → يرجع كل المدراء المساعدين
+    if (u.role === "admin") {
+      assistants = await User.find({ role: "assistant_director" })
+        .select("-password")
+        .populate("directorId", "fullName email phone branch shift avatar");
+    }
+
+    //  لو Director → يرجع فقط المساعدين التابعين له
+    else if (u.role === "director") {
+      assistants = await User.find({
+        role: "assistant_director",
+        directorId: u._id,
+      })
+        .select("-password")
+        .populate("directorId", "fullName email phone branch shift avatar");
+    }
+
+    else {
+      return res.status(403).json({ message: "🚫 غير مصرح لك بالوصول" });
+    }
+
+    if (!assistants || assistants.length === 0) {
+      return res.status(404).json({
+        message: "⚠️ لا يوجد مديرين مساعدين",
+      });
+    }
+
+    // ⭐ نُجهز البيانات بصيغة جاهزة للفرونت
+    const formatted = [];
+
+    for (const assistant of assistants) {
+      // 🟡 حساب عدد المعلمين + المساعدين التابعين له
+      const employeesCount = await User.countDocuments({
+        role: { $in: ["teacher", "assistant_teacher"] },
+        assistantDirectorId: assistant._id,
+      });
+
+      // 🟡 حساب عدد الأطفال اللي يتبعونه
+      const childrenCount = await Child.countDocuments({
+        _id: { $in: assistant.managedChildren },
+      });
+
+      // 🟡 جلب اسم الفرع
+      const branch = await Branch.findById(assistant.branch);
+
+      formatted.push({
+        _id: assistant._id,
+        fullName: assistant.fullName,
+        email: assistant.email,
+        phone: assistant.phone,
+        avatar: assistant.avatar,
+
+        branch: branch?.branchName || "غير محدد",
+        shift: assistant.shift || "غير محدد",
+
+        director: assistant.directorId
+          ? assistant.directorId.fullName
+          : "غير مرتبط بمدير",
+
+        employeesCount,
+        childrenCount,
+        // استرجاع المدير الاساسي 
+        director: assistant.directorId
+          ? {
+              id: assistant.directorId._id,
+              fullName: assistant.directorId.fullName,
+              }
+          : null,
+      });
+    }
+
+    
+
+    // 📤 نرجع الرد النهائي
+    return res.status(200).json({
+      count: formatted.length,
+      assistants: formatted,
+    });
   } catch (error) {
-    res.status(500).json({ message: "❌ خطأ في جلب المديرين المساعدين", error: error.message });
+    console.error(error);
+    return res.status(500).json({
+      message: "❌ خطأ في جلب المديرين المساعدين",
+      error: error.message,
+    });
   }
 };
 
@@ -433,6 +540,38 @@ const getDirectorDetails = async (req, res) => {
     });
   }
 };
+// جلب كل المعلمين المساعدين والرئيسين للمدير 
+const getAllManagedTeachers = async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!["director", "assistant_director"].includes(user.role)) {
+      return res
+        .status(403)
+        .json({ message: "❌ هذا الإجراء متاح للمدير أو المساعد فقط" });
+    }
+
+    const director = await User.findById(user._id)
+      .populate({
+        path: "managedTeachers",
+        populate: [
+          { path: "branch", select: "branchName" },
+          { path: "teacherChildren", select: "_id" } // فقط لحساب العدد
+        ]
+      });
+
+    if (!director) {
+      return res.status(404).json({ message: "Director not found" });
+    }
+
+    res.status(200).json({ teachers: director.managedTeachers });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "❌ خطأ أثناء جلب المعلمين" });
+  }
+};
+
 
 // ✅ جلب المعلمين التابعين للمدير أو المساعد فقط
 const getManagedTeachers = async (req, res) => {
@@ -445,17 +584,45 @@ const getManagedTeachers = async (req, res) => {
         .json({ message: "❌ هذا الإجراء متاح للمدير أو المساعد فقط" });
     }
 
-    const director = await User.findById(user._id).populate(
-      "managedTeachers",
-      "_id fullName"
-    );
+    const director = await User.findById(user._id)
+      .populate({
+        path: "managedTeachers",
+        match: { role: "teacher" }, // ✅ بس المعلمات اللي رولهم teacher
+        populate: [
+          { path: "branch", select: "branchName" },
+          { path: "teacherChildren", select: "_id" } // فقط لحساب العدد
+        ]
+      });
 
-    res.status(200).json({
-      teachers: director.managedTeachers,
-    });
+    if (!director) {
+      return res.status(404).json({ message: "Director not found" });
+    }
+
+    res.status(200).json({ teachers: director.managedTeachers });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "❌ خطأ أثناء جلب المعلمين" });
+  }
+};
+
+
+
+// 🟩 ADMIN — all teachers + assistants
+const getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await User.find({
+      role: { $in: ["teacher", "assistant_teacher"] }
+    })
+      .populate("teacherChildren")
+      .populate("branch")
+      .populate("classroom")
+      .populate("directorId")
+
+    res.status(200).json(teachers);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Failed to fetch teachers" });
   }
 };
 
@@ -472,5 +639,7 @@ module.exports = {
   getAllAssistantDirectors,
   getAssistantDirector,
   getDirectorDetails,
-  getManagedTeachers
+  getAllManagedTeachers,
+  getManagedTeachers,
+  getAllTeachers,
 };

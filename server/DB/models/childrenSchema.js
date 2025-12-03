@@ -39,8 +39,15 @@ const childrenSchema = new mongoose.Schema({
   teacherMain: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    default: null,   // نفس السبب
+    default: null, 
   },
+
+  teacherAssistant: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null, 
+  }],
+
   subscription: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Subscription",

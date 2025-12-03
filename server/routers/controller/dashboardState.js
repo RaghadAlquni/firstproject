@@ -8,6 +8,7 @@ const getDashboard = async (req, res) => {
   try {
     const role = req.user.role;
     const branch = req.user.branch;
+    const shift = req.user.shift;
 
     let stats = {
       totalChildren: 0,
@@ -63,17 +64,20 @@ const getDashboard = async (req, res) => {
     else if (role === "director") {
       stats.totalChildren = await Children.countDocuments({
         branch,
+        shift,
         status: "مؤكد",
       });
 
       stats.totalTeachers = await User.countDocuments({
         role: { $in: ["teacher", "assistant_teacher"] },
         branch,
+        shift,
       });
 
       stats.totalManager = await User.countDocuments({
         role: { $in: ["director", "assistant_director"] },
         branch,
+        shift,
       });
 
       stats.totalEmployees = await User.countDocuments({
@@ -86,10 +90,12 @@ const getDashboard = async (req, res) => {
           ],
         },
         branch,
+        shift,
       });
 
       stats.totalRequests = await Children.countDocuments({
         branch,
+        shift,
         status: "مضاف",
       });
     }
@@ -98,12 +104,14 @@ const getDashboard = async (req, res) => {
     else if (role === "assistant_director") {
       stats.totalChildren = await Children.countDocuments({
         branch,
+        shift,
         status: "مؤكد",
       });
 
       stats.totalTeachers = await User.countDocuments({
         role: { $in: ["teacher", "assistant_teacher"] },
         branch,
+        shift,
       });
 
       stats.totalEmployees = await User.countDocuments({
@@ -116,10 +124,12 @@ const getDashboard = async (req, res) => {
           ],
         },
         branch,
+        shift,
       });
 
       stats.totalRequests = await Children.countDocuments({
         branch,
+        shift,
         status: "مضاف",
       });
     }
@@ -148,20 +158,48 @@ const getDashboard = async (req, res) => {
       stats.genderStats = { boys, girls };
     }
 
-    // gender for others
-    if (role !== "teacher") {
-      const boys = await Children.countDocuments({
-        ...confirmedChildrenQuery,
-        gender: "ولد",
-      });
+//  ADMIN — يشوف كل الأطفال
+if (role === "admin") {
+  const boys = await Children.countDocuments({ status: "مؤكد", gender: "ولد" });
+  const girls = await Children.countDocuments({ status: "مؤكد", gender: "بنت" });
 
-      const girls = await Children.countDocuments({
-        ...confirmedChildrenQuery,
-        gender: "بنت",
-      });
+  stats.genderStats = { boys, girls };
+}
 
-      stats.genderStats = { boys, girls };
-    }
+//  DIRECTOR — يشوف فقط managedChildren حقه
+else if (role === "director") {
+  const boys = await Children.countDocuments({
+    _id: { $in: req.user.managedChildren },
+    gender: "ولد",
+    status: "مؤكد",
+  });
+
+  const girls = await Children.countDocuments({
+    _id: { $in: req.user.managedChildren },
+    gender: "بنت",
+    status: "مؤكد",
+  });
+
+  stats.genderStats = { boys, girls };
+}
+
+//  ASSISTANT DIRECTOR — نفس المدير، يشوف فقط managedChildren
+else if (role === "assistant_director") {
+  const boys = await Children.countDocuments({
+    _id: { $in: req.user.managedChildren },
+    gender: "ولد",
+    status: "مؤكد",
+  });
+
+  const girls = await Children.countDocuments({
+    _id: { $in: req.user.managedChildren },
+    gender: "بنت",
+    status: "مؤكد",
+  });
+
+  stats.genderStats = { boys, girls };
+}
+
 
     const chartData = [
       { label: "1", expenses: 120, payments: 90 },

@@ -1,6 +1,6 @@
 const Classroom = require("../../DB/models/classroomSchema.js");
 const Branch = require("../../DB/models/branchSchema.js");
-const Child = require("../../DB/models/childrenSchema.js")
+const Children = require("../../DB/models/childrenSchema");
 const User = require("../../DB/models/userSchema");
 
 //  🏫 إنشاء فصل جديد بواسطة المعلم واضافه الكلاس تلقائيا للمعلم 
@@ -59,51 +59,92 @@ const addClassroomByTeacher = async (req, res) => {
 // 👶 دالة: المعلم يضيف طفل إلى كلاس معين
 const addChildToClassroom = async (req, res) => {
   try {
-    const { classroomId, fullName, age, gender, parentName, parentPhone } = req.body;
+    const { classroomId, childId } = req.body;
     const teacher = req.user;
 
-    if (teacher.role !== "teacher") {
-      return res.status(403).json({ message: "❌ فقط المعلمين يمكنهم إضافة الأطفال" });
+    if (!classroomId || !childId) {
+      return res.status(400).json({ message: "classroomId و childId مطلوبين" });
     }
 
+    // جلب الفصل
     const classroom = await Classroom.findById(classroomId);
     if (!classroom) return res.status(404).json({ message: "❌ الفصل غير موجود" });
 
-    // ✅ تأكد أن المعلم أحد العاملين في هذا الكلاس (رئيسي أو مساعد)
+    // جلب الطفل
+    const child = await Children.findById(childId);
+    if (!child) return res.status(404).json({ message: "❌ الطفل غير موجود" });
+
+    // تأكد أن المعلم يعمل في هذا الفصل
     const isTeacherOfClass =
       String(classroom.teacherMain) === String(teacher._id) ||
-      classroom.teacherAssistants.some(id => String(id) === String(teacher._id));
+      classroom.teacherAssistants.some((id) => String(id) === String(teacher._id));
 
     if (!isTeacherOfClass) {
-      return res.status(403).json({ message: "❌ لا يمكنك إضافة طفل إلى فصل لا تعمل فيه" });
+      return res.status(403).json({ message: "❌ لا يمكنك إضافة طفل لهذا الفصل" });
     }
 
-    const newChild = new Child({
-      fullName,
-      age,
-      gender,
-      parentName,
-      parentPhone,
-      branch: classroom.branch,
-      shift: classroom.shift,
-      teacherMain: classroom.teacherMain,
-      classroom: classroom._id,
+    // تحديث الطفل
+    child.classroom = classroomId;
+    child.teacherMain = classroom.teacherMain;
+    child.teacherAssistant = classroom.teacherAssistants;
+    child.status = "مؤكد";
+    await child.save();
+
+    // إضافة الطفل للفصل
+    if (!classroom.children.includes(childId)) {
+      classroom.children.push(childId);
+      await classroom.save();
+    }
+
+    res.status(200).json({
+      message: "✅ تم إضافة الطفل للفصل بنجاح",
+      child,
     });
 
-    await newChild.save();
-
-    classroom.children.push(newChild._id);
-    await classroom.save();
-
-    res.status(201).json({
-      message: "✅ تم إضافة الطفل بنجاح إلى الفصل",
-      child: newChild,
-    });
   } catch (error) {
-    console.error("❌ Error adding child:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء إضافة الطفل ❌", error: error.message });
+    res.status(500).json({ message: "خطأ أثناء إضافة الطفل", error: error.message });
   }
 };
+
+
+const moveChildToAnotherClassroom = async (req, res) => {
+  try {
+    const { childId, newClassroomId } = req.body;
+
+    const child = await Children.findById(childId);
+    if (!child) return res.status(404).json({ message: "❌ الطفل غير موجود" });
+
+    const oldClassroom = await Classroom.findById(child.classroom);
+    const newClassroom = await Classroom.findById(newClassroomId);
+
+    if (!newClassroom)
+      return res.status(404).json({ message: "❌ الفصل الجديد غير موجود" });
+
+    // 🗑 إزالة الطفل من الفصل القديم
+    if (oldClassroom) {
+      oldClassroom.children = oldClassroom.children.filter(
+        (id) => String(id) !== String(childId)
+      );
+      await oldClassroom.save();
+    }
+
+    // ➕ إضافة الطفل للفصل الجديد
+    newClassroom.children.push(childId);
+    await newClassroom.save();
+
+    // 🔄 تحديث الطفل
+    child.classroom = newClassroomId;
+    await child.save();
+
+    res.status(200).json({
+      message: "✅ تم نقل الطفل للفصل الجديد بنجاح",
+      child,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 // اضافة معلم مساعد لكلاس
 const addAssistantToClassroom = async (req, res) => {
@@ -159,4 +200,4 @@ const addAssistantToClassroom = async (req, res) => {
   }
 };
 
-module.exports = { addClassroomByTeacher, addChildToClassroom, addAssistantToClassroom };
+module.exports = { addClassroomByTeacher, addChildToClassroom, addAssistantToClassroom, moveChildToAnotherClassroom };

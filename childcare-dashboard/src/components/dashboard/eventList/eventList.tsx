@@ -11,9 +11,11 @@ interface EventItem {
   day: string;
   type: string;
   numberDay: number;
+
+  fullDate: Date; // مهم للفرز
 }
 
-function formatEvent(e: any) {
+function formatEvent(e: any): EventItem {
   const d = new Date(e.date);
 
   const days = [
@@ -27,7 +29,8 @@ function formatEvent(e: any) {
   ];
 
   return {
-    numberDay: d.toLocaleDateString("en-US", { day: "numeric" }),
+    fullDate: d, // نحتفظ بالتاريخ الحقيقي للفرز
+    numberDay: d.getDate(),
     date: d.toLocaleDateString("en-US", { day: "numeric", month: "long" }),
     day: days[d.getDay()],
     title: e.title,
@@ -43,12 +46,33 @@ export default function EventsSidebar() {
     const getEvents = async () => {
       try {
         const res = await axios.get("http://localhost:5000/eventsAndNews");
-        const formated = res.data.events.map((e: any) => formatEvent(e));
-        setEvents(formated);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+const upcoming = res.data
+  .map((e: any): EventItem => formatEvent(e))
+
+  .filter((ev: EventItem) => {
+    const evDate = new Date(ev.fullDate);
+    evDate.setHours(0, 0, 0, 0);
+    return evDate >= today;
+  })
+
+  .sort((a: EventItem, b: EventItem) => {
+    return (
+      new Date(a.fullDate).getTime() -
+      new Date(b.fullDate).getTime()
+    );
+  });
+
+
+        setEvents(upcoming);
       } catch (error) {
         console.log("Error loading events:", error);
       }
     };
+
     getEvents();
   }, []);
 
@@ -90,7 +114,7 @@ export default function EventsSidebar() {
         </h2>
 
         {/* القائمة */}
-        <div className="flex flex-col gap-2 mt-2">
+<div className="flex flex-col gap-2 mt-2 max-h-screen overflow-y-auto pr-2">
           {events.map((ev, index) => (
             <div
               key={index}

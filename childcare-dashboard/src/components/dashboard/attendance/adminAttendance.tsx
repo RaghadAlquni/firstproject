@@ -170,7 +170,7 @@ export default function AttendancePage() {
   return (
     <div className="w-full overflow-x-hidden min-h-screen bg-[var(--bg)]">
       {/* HEADER */}
-      <div className="sticky top-0 bg-[var(--bg)] z-50 py-4 px-4 md:px-6 w-full">
+      <div className="sticky top-0 bg-[var(--bg)] z-50 md:px-6 w-full">
         {/* العنوان */}
         <div className="max-w-5xl mx-auto">
           <h1 className="text-[24px] font-bold text-right text-[var(--text)]">
@@ -181,6 +181,7 @@ export default function AttendancePage() {
           </h1>
         </div>
 
+        
         {/* DATE + VIEW BUTTONS */}
         <div className="max-w-5xl mx-auto mt-4 flex justify-between items-center">
           <div className="text-[var(--text)] font-semibold text-lg text-right">

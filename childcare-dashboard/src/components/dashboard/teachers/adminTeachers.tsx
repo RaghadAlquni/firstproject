@@ -96,7 +96,7 @@ const adminTeacher = () => {
   ];
 
   return (
-    <div className="p-8 flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {/* العنوان */}
       <h1 className="text-[24px] font-bold text-right text-[var(--text)]">
         <span className="text-[#d5d5d5] text-[20px] md:font-medium">
@@ -104,7 +104,7 @@ const adminTeacher = () => {
         </span>{" "}
         المعلمات الرئيسيات والمعلمات المساعدات
       </h1>
-
+      
       {/* اختيار الفرع */}
       <div className="w-full relative">
         <div

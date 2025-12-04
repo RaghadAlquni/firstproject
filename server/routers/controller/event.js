@@ -1,55 +1,79 @@
 const Event = require("../../DB/models/EventSchema.js");
 
 // إنشاء حدث جديد
-// إنشاء حدث جديد
 const createEvent = async (req, res) => {
   try {
-    const { title, coverImage, date, description, gallery, type } = req.body;
+    const user = req.user;
 
-    // التحقق من الحقول الأساسية
-    if (!title || !coverImage || !description || !type) {
-      return res
-        .status(400)
-        .json({ message: "الرجاء تعبئة جميع الحقول المطلوبة" });
+    if (!user) {
+      return res.status(401).json({ message: "غير مصرح" });
     }
 
-    // إنشاء الحدث
+    const { title, type, visibility, description, date, coverImage, images } = req.body;
+
+    if (!title || !type || !description || !date) {
+      return res.status(400).json({ message: "جميع الحقول مطلوبة" });
+    }
+
+    let finalCoverImage = null;
+
+    if (req.files?.coverImage?.[0]) {
+      finalCoverImage = "/uploads/events/" + req.files.coverImage[0].filename;
+    } else if (coverImage) {
+      finalCoverImage = coverImage;
+    }
+
+    let finalImages = [];
+
+    if (req.files?.images) {
+      finalImages = req.files.images.map((i) => "/uploads/events/" + i.filename);
+    } else if (images) {
+      finalImages = Array.isArray(images) ? images : [images];
+    }
+
+    console.log("REQ BODY:", req.body);
+    console.log("REQ FILES:", req.files);
+
     const newEvent = new Event({
       title,
-      coverImage,
-      description,
       type,
-      gallery: gallery || [],
-      date: date ? new Date(date) : Date.now(),
+      visibility,
+      description,
+      date,
+      createdBy: user._id,
+      coverImage: finalCoverImage,
+      images: finalImages,
     });
 
     await newEvent.save();
 
     res.status(201).json({
-      message: "تم إضافة الحدث بنجاح 🎉",
+      message: "تم إضافة الحدث بنجاح",
       event: newEvent,
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "حدث خطأ أثناء إضافة الحدث" });
+    console.error("Add Event Error:", error);
+    res.status(500).json({ message: "خطأ في السيرفر" });
   }
 };
+
 
 
 // عرض جميع الأحداث
 const getAllEvents = async (req, res) => {
   try {
-    // نجيب كل الأحداث مرتبة حسب الأحدث أولًا
-    const events = await Event.find().sort({ date: -1 });
+    const events = await Event.find()
+      .populate({
+        path: "createdBy",
+        select: "fullName role"
+      })
+      .sort({ date: 1 });
 
-    res.status(200).json({
-      message: "تم جلب جميع الأحداث بنجاح ✅",
-      count: events.length,
-      events,
-    });
+    res.status(200).json(events);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "حدث خطأ أثناء جلب الأحداث" });
+    res.status(500).json({ message: "خطأ في السيرفر" });
   }
 };
 
@@ -110,24 +134,65 @@ const getOnlyNews = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body; // نأخذ فقط القيم اللي جات من المستخدم
 
-    const updatedEvent = await Event.findByIdAndUpdate(id, updates, {
-      new: true, // يرجّع الحدث بعد التعديل
-      runValidators: true, // يتأكد من القيم حسب السكيما
-    });
+    // البيانات من الـ body
+    const { title, type, visibility, description, date, coverImage, images } =
+      req.body;
 
-    if (!updatedEvent) {
+    // جلب الحدث القديم أولاً
+    const existingEvent = await Event.findById(id);
+    if (!existingEvent) {
       return res.status(404).json({ message: "الحدث غير موجود ❌" });
     }
 
+    // =============== معالجة الكوفر ====================
+    let finalCoverImage = existingEvent.coverImage; // الافتراضي: الصورة القديمة
+
+    // إذا المستخدم رفع صورة جديدة عبر Multer
+    if (req.files?.coverImage?.[0]) {
+      finalCoverImage = "/uploads/events/" + req.files.coverImage[0].filename;
+    }
+    // لو أرسل رابط للصورة
+    else if (coverImage) {
+      finalCoverImage = coverImage;
+    }
+
+    // =============== معالجة الصور الإضافية ==================
+    let finalImages = existingEvent.images; // الافتراضي: الصور القديمة
+
+    // إذا رفع صور جديدة
+    if (req.files?.images) {
+      finalImages = req.files.images.map(
+        (i) => "/uploads/events/" + i.filename
+      );
+    }
+    // لو أرسل روابط جديدة من JSON
+    else if (images) {
+      finalImages = Array.isArray(images) ? images : [images];
+    }
+
+    // =============== تنفيذ التحديث ==================
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      {
+        title: title ?? existingEvent.title,
+        type: type ?? existingEvent.type,
+        visibility: visibility ?? existingEvent.visibility,
+        description: description ?? existingEvent.description,
+        date: date ?? existingEvent.date,
+        coverImage: finalCoverImage,
+        images: finalImages,
+      },
+      { new: true, runValidators: true }
+    );
+
     res.status(200).json({
       message: "تم تعديل الحدث بنجاح ✏️",
-      updatedEvent,
+      event: updatedEvent,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "حدث خطأ أثناء تعديل الحدث" });
+    console.error("Update Event Error:", error);
+    res.status(500).json({ message: "حدث خطأ أثناء تعديل الحدث ⚠️" });
   }
 };
 

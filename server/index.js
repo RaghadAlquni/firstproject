@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require('morgan') 
 require("./DB/db.js");
 const axios = require("axios");
+const path = require("path");
 
 require("./scripts/subscriptionMonitor.js");
 
@@ -80,6 +81,8 @@ app.use(moneyRouter)
 
 const attendanceRouter = require("./routers/routes/attendance.js")
 app.use(attendanceRouter)
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const PORT = process.env.PORT || 5000 ;
 app.listen(PORT, () => {
